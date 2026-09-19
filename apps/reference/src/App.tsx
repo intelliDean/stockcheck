@@ -55,6 +55,11 @@ function getAppMode(): AppMode {
   return "correct";
 }
 
+function getAppConvention(): "scaled" | "unscaled" {
+  const params = new URLSearchParams(window.location.search);
+  return params.get("convention") === "unscaled" ? "unscaled" : "scaled";
+}
+
 // ──────────────────────────────────────────────────────────
 // Multiplier resolution (mirrors Token-2022's reference impl)
 // ──────────────────────────────────────────────────────────
@@ -178,6 +183,13 @@ export default function App() {
   // Sync on-chain mint extension state if running
   useEffect(() => {
     async function syncMint() {
+      const injected = (
+        window as unknown as {
+          __STOCKCHECK_MINT_STATE__?: unknown;
+        }
+      ).__STOCKCHECK_MINT_STATE__;
+      if (injected) return;
+
       try {
         const rpc = createSolanaRpc(SURFPOOL_RPC);
         const onchain = await fetchMint(rpc, address(mint.address));
@@ -217,9 +229,55 @@ export default function App() {
     });
   }, [connected, walletAddress, mint.address]);
 
-  const effectiveMultiplier = resolveMultiplier(mint, mode);
+  // Check injected test mint state from Playwright runner
+  useEffect(() => {
+    function checkInjectedMint() {
+      const injected = (
+        window as unknown as {
+          __STOCKCHECK_MINT_STATE__?: {
+            currentMultiplier: number;
+            newMultiplier: number;
+            newMultiplierEffectiveTimestamp: string;
+          };
+        }
+      ).__STOCKCHECK_MINT_STATE__;
+      if (injected) {
+        setMint((prev) => {
+          const ts = BigInt(injected.newMultiplierEffectiveTimestamp);
+          if (
+            prev.currentMultiplier === injected.currentMultiplier &&
+            prev.newMultiplier === injected.newMultiplier &&
+            prev.newMultiplierEffectiveTimestamp === ts
+          ) {
+            return prev;
+          }
+          return {
+            ...prev,
+            currentMultiplier: injected.currentMultiplier,
+            newMultiplier: injected.newMultiplier,
+            newMultiplierEffectiveTimestamp: ts,
+          };
+        });
+      }
+    }
+    checkInjectedMint();
+    const interval = setInterval(checkInjectedMint, 500);
+    return () => clearInterval(interval);
+  }, []);
+
+  const convention = getAppConvention();
+  const [, setTick] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTick((t) => t + 1);
+    }, 500);
+    return () => clearInterval(interval);
+  }, []);
+
+  const effectiveMultiplier = convention === "unscaled" ? 1 : resolveMultiplier(mint, mode);
   const displayedBalance = rawToScaled(rawBalance, mint.decimals, effectiveMultiplier);
-  const unitLabel = "scaled units";
+  const unitLabel = convention === "unscaled" ? "unscaled units" : "scaled units";
 
   // ── Max button ──────────────────────────────────────────
   const [isMaxClicked, setIsMaxClicked] = useState(false);

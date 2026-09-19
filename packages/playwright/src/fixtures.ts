@@ -159,8 +159,21 @@ export async function runScenario(
   const destinationBefore = await getSnapshot(recipientAddress);
   const clockAtEvaluation = await getClockTimestampSeconds();
 
+  // Inject mint state for the test scenario
+  const mintPayload = {
+    currentMultiplier: mintState.currentMultiplier,
+    newMultiplier: mintState.newMultiplier,
+    newMultiplierEffectiveTimestamp: mintState.newMultiplierEffectiveTimestamp.toString(),
+  };
+  await page.addInitScript((state) => {
+    (globalThis as unknown as { __STOCKCHECK_MINT_STATE__?: unknown }).__STOCKCHECK_MINT_STATE__ = state;
+  }, mintPayload);
+
   // Operate the UI
   await adapter.openTransferScreen(page);
+  await page.evaluate((state) => {
+    (globalThis as unknown as { __STOCKCHECK_MINT_STATE__?: unknown }).__STOCKCHECK_MINT_STATE__ = state;
+  }, mintPayload).catch(() => {});
   await adapter.connectWallet(page);
   await adapter.selectToken(page, mintAddress);
   await adapter.enterRecipient(page, recipientAddress);

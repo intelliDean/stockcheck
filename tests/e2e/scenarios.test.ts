@@ -52,17 +52,6 @@ function loadMintState(): MintState {
   };
 }
 
-// Placeholder — replace with actual @solana/kit account reads in integration
-async function readAccountSnapshot(address: string): Promise<AccountSnapshot> {
-  const clockTs = await getClockTimestampSeconds().catch(() => 0n);
-  return {
-    address,
-    rawBalance: 0n, // TODO: implement real RPC read
-    slot: 0n,
-    timestamp: clockTs,
-  };
-}
-
 const FIXTURE_IDENTITY = "synthetic-v1-6dec";
 const RUNTIME_IDENTITY = "surfpool-local";
 
@@ -93,9 +82,9 @@ stockcheck(
         scenarioDescription: "Multiplier 1; six decimals; enter 2 scaled units",
         mintAddress: mintState.mintAddress,
         mintState,
+        senderAddress: senderWallet.publicKey,
         recipientAddress: recipientWallet.publicKey,
         amountToEnter: "2",
-        readAccountSnapshot,
         fixtureIdentity: FIXTURE_IDENTITY,
         runtimeIdentity: RUNTIME_IDENTITY,
       },
@@ -137,9 +126,9 @@ stockcheck(
         scenarioDescription: "Active multiplier 2; enter 2 scaled units",
         mintAddress: mintState.mintAddress,
         mintState,
+        senderAddress: senderWallet.publicKey,
         recipientAddress: recipientWallet.publicKey,
         amountToEnter: "2",
-        readAccountSnapshot,
         fixtureIdentity: FIXTURE_IDENTITY,
         runtimeIdentity: RUNTIME_IDENTITY,
       },
@@ -169,6 +158,15 @@ stockcheck(
     // Install Playwright clock BEFORE navigation — captures all timers
     await page.clock.install({ time: Number(nowTs) * 1000 });
 
+    const scheduledMintState = {
+      currentMultiplier: 1,
+      newMultiplier: 2,
+      newMultiplierEffectiveTimestamp: activationTs.toString(),
+    };
+    await page.addInitScript((state) => {
+      (globalThis as unknown as { __STOCKCHECK_MINT_STATE__?: unknown }).__STOCKCHECK_MINT_STATE__ = state;
+    }, scheduledMintState);
+
     // Open the page BEFORE activation (multiplier=1)
     await adapter.openTransferScreen(page);
     await adapter.connectWallet(page);
@@ -180,7 +178,7 @@ stockcheck(
     await page.clock.fastForward(31_000);
 
     // Allow app's polling interval to fire (app should detect new multiplier)
-    await page.waitForTimeout(500);
+    await page.clock.runFor(1000);
 
     // Now enter a transfer — post-activation multiplier=2
     // 2 scaled at multiplier=2 → 1,000,000 raw
@@ -201,9 +199,9 @@ stockcheck(
           "Page open across scheduled 1→2 activation; post-activation transfer",
         mintAddress: mintState.mintAddress,
         mintState: activatedMintState,
+        senderAddress: senderWallet.publicKey,
         recipientAddress: recipientWallet.publicKey,
         amountToEnter: "2",
-        readAccountSnapshot,
         fixtureIdentity: FIXTURE_IDENTITY,
         runtimeIdentity: RUNTIME_IDENTITY,
       },
@@ -240,10 +238,10 @@ stockcheck(
         scenarioDescription: "Max with fractional balance",
         mintAddress: mintState.mintAddress,
         mintState,
+        senderAddress: senderWallet.publicKey,
         recipientAddress: recipientWallet.publicKey,
         amountToEnter: "0",
         isMax: true,
-        readAccountSnapshot,
         fixtureIdentity: FIXTURE_IDENTITY,
         runtimeIdentity: RUNTIME_IDENTITY,
       },
@@ -291,9 +289,9 @@ stockcheck(
           "Explicit unscaled-input interface at multiplier=2; enter 2 unscaled",
         mintAddress: mintState.mintAddress,
         mintState,
+        senderAddress: senderWallet.publicKey,
         recipientAddress: recipientWallet.publicKey,
         amountToEnter: "2",
-        readAccountSnapshot,
         fixtureIdentity: FIXTURE_IDENTITY,
         runtimeIdentity: RUNTIME_IDENTITY,
       },

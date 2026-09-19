@@ -12,6 +12,7 @@ test-results/
 
 # Keys and secrets — NEVER commit
 fixtures/synthetic/mint-keypair.json
+fixtures/synthetic/mint-authority.json
 *.keypair.json
 test-wallet-*.json
 

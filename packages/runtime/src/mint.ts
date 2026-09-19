@@ -5,9 +5,27 @@
  * on the local Surfpool environment.
  */
 
-import { execSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { readFileSync, writeFileSync } from "node:fs";
+import { resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+import {
+  createSolanaRpc,
+  createKeyPairSignerFromBytes,
+  createTransactionMessage,
+  setTransactionMessageFeePayerSigner,
+  setTransactionMessageLifetimeUsingBlockhash,
+  appendTransactionMessageInstructions,
+  signTransactionMessageWithSigners,
+  getBase64EncodedWireTransaction,
+  address,
+} from "@solana/kit";
+import {
+  getCreateAssociatedTokenIdempotentInstruction,
+  getMintToInstruction,
+  findAssociatedTokenPda,
+  TOKEN_2022_PROGRAM_ADDRESS,
+} from "@solana-program/token-2022";
 
 export interface SyntheticMintConfig {
   /** Mint address (base58) */
@@ -19,7 +37,7 @@ export interface SyntheticMintConfig {
   /** Initial multiplier at mint creation */
   initialMultiplier: number;
   /** Base58 keypair path used to create the mint */
-  mintKeypairPath: string;
+  mintKeypairPath?: string;
   /** SHA-256 hash of raw mint account bytes at creation (hex) */
   mintBytesHashAtCreation: string;
 }
@@ -53,4 +71,60 @@ export function saveSyntheticMintConfig(
   config: SyntheticMintConfig
 ): void {
   writeFileSync(fixturePath, JSON.stringify(config, null, 2));
+}
+
+/**
+ * Mint synthetic Token-2022 ScaledUiAmount tokens directly to any recipient wallet.
+ * Creates the recipient ATA idempotently if it does not already exist.
+ */
+export async function mintTokensTo(
+  recipientOwnerAddress: string,
+  rawAmount: bigint,
+  fixtureDir?: string,
+  rpcUrl = "http://127.0.0.1:8899"
+): Promise<string> {
+  const dir =
+    fixtureDir ??
+    resolve(dirname(fileURLToPath(import.meta.url)), "../../../fixtures/synthetic");
+  const mintJson = JSON.parse(readFileSync(resolve(dir, "mint.json"), "utf-8"));
+  const authJson = JSON.parse(readFileSync(resolve(dir, "mint-authority.json"), "utf-8"));
+
+  const rpc = createSolanaRpc(rpcUrl);
+  const authoritySigner = await createKeyPairSignerFromBytes(
+    new Uint8Array(authJson.secretKeyArray)
+  );
+  const mintAddr = address(mintJson.mintAddress);
+  const recipientAddr = address(recipientOwnerAddress);
+
+  const [recipientAta] = await findAssociatedTokenPda({
+    mint: mintAddr,
+    owner: recipientAddr,
+    tokenProgram: TOKEN_2022_PROGRAM_ADDRESS,
+  });
+
+  const createAtaIx = getCreateAssociatedTokenIdempotentInstruction({
+    payer: authoritySigner,
+    ata: recipientAta,
+    owner: recipientAddr,
+    mint: mintAddr,
+    tokenProgram: TOKEN_2022_PROGRAM_ADDRESS,
+  });
+
+  const mintToIx = getMintToInstruction({
+    mint: mintAddr,
+    token: recipientAta,
+    mintAuthority: authoritySigner.address,
+    amount: rawAmount,
+  });
+
+  const { value: latestBlockhash } = await rpc.getLatestBlockhash().send();
+  const message = createTransactionMessage({ version: 0 });
+  const withPayer = setTransactionMessageFeePayerSigner(authoritySigner, message);
+  const withLifetime = setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, withPayer);
+  const withIxs = appendTransactionMessageInstructions([createAtaIx, mintToIx], withLifetime);
+
+  const signedTx = await signTransactionMessageWithSigners(withIxs);
+  const wireTx = getBase64EncodedWireTransaction(signedTx);
+  const sig = await rpc.sendTransaction(wireTx, { encoding: "base64" }).send();
+  return sig;
 }

@@ -27,7 +27,7 @@ export interface TestKeypair {
  */
 export async function generateTestKeypair(): Promise<TestKeypair> {
   const keyPair = await webcrypto.subtle.generateKey(
-    { name: "Ed25519" } as EcKeyGenParams,
+    { name: "Ed25519" } as any,
     true,
     ["sign", "verify"]
   );

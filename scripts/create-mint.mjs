@@ -3,7 +3,7 @@
  * scripts/create-mint.mjs
  *
  * Creates the synthetic ScaledUiAmount Token-2022 mint on Surfpool using @solana/kit.
- * Saves the mint config to fixtures/synthetic/mint.json for use by the reference app and tests.
+ * Saves the mint config to fixtures/synthetic/mint.json and authority to mint-authority.json.
  * Computes and saves the SHA-256 hash of the initial mint bytes.
  */
 
@@ -13,7 +13,7 @@ import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   createSolanaRpc,
-  generateKeyPairSigner,
+  createKeyPairSignerFromBytes,
   createTransactionMessage,
   addSignersToInstruction,
   setTransactionMessageFeePayerSigner,
@@ -31,11 +31,12 @@ import {
   TOKEN_2022_PROGRAM_ADDRESS,
   fetchMint,
 } from "@solana-program/token-2022";
+import { generateTestKeypair } from "../packages/test-wallet/dist/index.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const FIXTURE_DIR = resolve(__dirname, "../fixtures/synthetic");
 const FIXTURE_PATH = resolve(FIXTURE_DIR, "mint.json");
-const KEYPAIR_PATH = resolve(FIXTURE_DIR, "mint-keypair.json");
+const AUTHORITY_PATH = resolve(FIXTURE_DIR, "mint-authority.json");
 const SURFPOOL_RPC = process.env.SURFPOOL_RPC_URL || "http://127.0.0.1:8899";
 
 async function main() {
@@ -55,9 +56,10 @@ async function main() {
     process.exit(1);
   }
 
-  // 1. Generate payer and airdrop
-  const payer = await generateKeyPairSigner();
-  console.log(`👤 Payer generated: ${payer.address}`);
+  // 1. Generate payer/authority keypair
+  const payerKp = await generateTestKeypair();
+  const payer = await createKeyPairSignerFromBytes(payerKp.secretKey);
+  console.log(`👤 Payer/Authority generated: ${payer.address}`);
 
   const airdropRes = await fetch(SURFPOOL_RPC, {
     method: "POST",
@@ -73,7 +75,8 @@ async function main() {
   await new Promise((r) => setTimeout(r, 500));
 
   // 2. Generate mint keypair
-  const mint = await generateKeyPairSigner();
+  const mintKp = await generateTestKeypair();
+  const mint = await createKeyPairSignerFromBytes(mintKp.secretKey);
   console.log(`🪙 Mint generated: ${mint.address}`);
 
   // System createAccount data for 226-byte mint with ScaledUiAmountConfig
@@ -151,7 +154,20 @@ async function main() {
   };
 
   writeFileSync(FIXTURE_PATH, JSON.stringify(fixture, null, 2));
+  writeFileSync(
+    AUTHORITY_PATH,
+    JSON.stringify(
+      {
+        publicKey: payerKp.publicKey,
+        secretKeyArray: payerKp.secretKeyArray,
+      },
+      null,
+      2
+    )
+  );
+
   console.log(`📄 Mint fixture saved to: ${FIXTURE_PATH}`);
+  console.log(`🔑 Authority saved to: ${AUTHORITY_PATH}`);
 }
 
 main().catch((err) => {

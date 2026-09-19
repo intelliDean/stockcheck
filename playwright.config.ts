@@ -15,12 +15,11 @@ export default defineConfig({
     headless: true,
     trace: "on", // always capture traces for evidence
     screenshot: "on",
-    video: "retain-on-failure",
   },
   projects: [
     {
       name: "stockcheck-e2e",
-      use: { ...devices["Desktop Chrome"] },
+      use: { ...devices["Desktop Chrome"], channel: "chrome" },
     },
   ],
   // Start reference app before tests, stop after

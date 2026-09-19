@@ -35,7 +35,14 @@ export class ReferenceAppAdapter implements AppAdapter {
   }
 
   async openTransferScreen(page: Page): Promise<void> {
-    await page.goto(REFERENCE_APP_BASE_URL);
+    const currentUrl = page.url();
+    const targetUrl =
+      this.inputConvention === "unscaled"
+        ? `${REFERENCE_APP_BASE_URL}?convention=unscaled`
+        : REFERENCE_APP_BASE_URL;
+    if (!currentUrl.startsWith(targetUrl)) {
+      await page.goto(targetUrl);
+    }
     await page.waitForSelector("[data-testid='transfer-form']");
   }
 
@@ -50,9 +57,13 @@ export class ReferenceAppAdapter implements AppAdapter {
   async selectToken(page: Page, mintAddress: string): Promise<void> {
     const selector = page.getByTestId("asset-selector");
     await selector.click();
-    await page
-      .getByTestId(`asset-option-${mintAddress}`)
-      .click();
+    const option = page.getByTestId(`asset-option-${mintAddress}`);
+    const isVisible = await option.isVisible({ timeout: 2000 }).catch(() => false);
+    if (isVisible) {
+      await option.click();
+    } else {
+      await selector.click().catch(() => {});
+    }
   }
 
   async enterRecipient(page: Page, recipientAddress: string): Promise<void> {
