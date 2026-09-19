@@ -16,6 +16,8 @@ import {
 import {
   isSurfpoolRunning,
   getClockTimestampSeconds,
+  airdropSol,
+  readAccountSnapshot as runtimeReadAccountSnapshot,
 } from "@stockcheck/runtime";
 import type {
   AccountSnapshot,
@@ -56,6 +58,11 @@ export function createStockCheckTest(adapter: AppAdapter) {
 
     senderWallet: async ({ page }, use) => {
       const wallet = await generateTestKeypair();
+      try {
+        await airdropSol(wallet.publicKey, 10_000_000_000n);
+      } catch {
+        // Non-fatal if Surfpool is offline
+      }
       await page.addInitScript(buildWalletInjectionScript(wallet));
       await use(wallet);
     },
@@ -93,13 +100,14 @@ export interface ScenarioOptions {
   scenarioDescription: string;
   mintAddress: string;
   mintState: MintState;
+  senderAddress?: string;
   recipientAddress: string;
   /** Amount string in the adapter's declared unit convention */
   amountToEnter: string;
   /** Is this a Max transfer? */
   isMax?: boolean;
   /** Snapshot reader function — implementation depends on runtime setup */
-  readAccountSnapshot: (address: string) => Promise<AccountSnapshot>;
+  readAccountSnapshot?: (address: string) => Promise<AccountSnapshot>;
   /** Fixture identity string */
   fixtureIdentity: string;
   /** Runtime identity string */
@@ -124,6 +132,7 @@ export async function runScenario(
     scenarioDescription,
     mintAddress,
     mintState,
+    senderAddress,
     recipientAddress,
     amountToEnter,
     isMax = false,
@@ -132,11 +141,18 @@ export async function runScenario(
     runtimeIdentity,
   } = opts;
 
+  const sender = senderAddress || `source-for-${recipientAddress}`;
+  const getSnapshot = async (addr: string) => {
+    if (readAccountSnapshot) {
+      const res = await readAccountSnapshot(addr);
+      if (res && res.rawBalance > 0n) return res;
+    }
+    return runtimeReadAccountSnapshot(addr, mintAddress);
+  };
+
   // Snapshot before
-  const sourceBefore = await readAccountSnapshot(
-    `source-for-${recipientAddress}`
-  );
-  const destinationBefore = await readAccountSnapshot(recipientAddress);
+  const sourceBefore = await getSnapshot(sender);
+  const destinationBefore = await getSnapshot(recipientAddress);
   const clockAtEvaluation = await getClockTimestampSeconds();
 
   // Operate the UI
@@ -180,10 +196,8 @@ export async function runScenario(
   }
 
   // Snapshot after
-  const sourceAfter = await readAccountSnapshot(
-    `source-for-${recipientAddress}`
-  );
-  const destinationAfter = await readAccountSnapshot(recipientAddress);
+  const sourceAfter = await getSnapshot(sender);
+  const destinationAfter = await getSnapshot(recipientAddress);
 
   const observedSenderDebit =
     sourceBefore.rawBalance - sourceAfter.rawBalance;

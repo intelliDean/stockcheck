@@ -104,12 +104,20 @@ export class ReferenceAppAdapter implements AppAdapter {
       .innerText()
       .catch(() => undefined);
 
-    return {
+    const result: {
+      displayedAmount: string;
+      displayedUnit: string;
+      displayedRecipient: string;
+      displayedMint?: string;
+    } = {
       displayedAmount: displayedAmount.trim(),
       displayedUnit: displayedUnit.trim(),
       displayedRecipient: displayedRecipient.trim(),
-      displayedMint: displayedMint?.trim(),
     };
+    if (displayedMint !== undefined) {
+      result.displayedMint = displayedMint.trim();
+    }
+    return result;
   }
 
   async clickConfirmAndWaitForReceipt(page: Page): Promise<string | null> {

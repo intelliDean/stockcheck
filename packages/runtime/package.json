@@ -17,7 +17,8 @@
   },
   "dependencies": {
     "@solana/kit": "^2.1.0",
-    "@solana-program/token-2022": "^0.4.0"
+    "@solana-program/token-2022": "^0.4.0",
+    "@stockcheck/core": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.6.0"

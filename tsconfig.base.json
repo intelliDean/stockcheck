@@ -13,6 +13,13 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "baseUrl": ".",
+    "paths": {
+      "@stockcheck/core": ["./packages/core/dist/index.d.ts"],
+      "@stockcheck/runtime": ["./packages/runtime/dist/index.d.ts"],
+      "@stockcheck/test-wallet": ["./packages/test-wallet/dist/index.d.ts"],
+      "@stockcheck/playwright": ["./packages/playwright/dist/index.d.ts"]
+    }
   }
 }
