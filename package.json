@@ -3,11 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "demo": "pnpm --filter reference dev & pnpm test:e2e --project=demo",
-    "test:unit": "pnpm --filter @stockcheck/core test:unit && pnpm --filter @stockcheck/runtime test:unit",
-    "test:e2e": "pnpm --filter @stockcheck/playwright-tests test:e2e",
-    "test:specimens": "pnpm --filter @stockcheck/playwright-tests test:specimens",
-    "report": "pnpm --filter @stockcheck/playwright-tests report"
+    "demo": "node ./scripts/demo.mjs",
+    "test": "pnpm test:unit && pnpm test:e2e && pnpm test:specimens",
+    "test:unit": "pnpm --filter @stockcheck/core-unit-tests test:unit",
+    "test:e2e": "node ./node_modules/@playwright/test/cli.js test --config playwright.config.ts",
+    "test:specimens": "node ./node_modules/@playwright/test/cli.js test --config playwright.specimens.config.ts",
+    "report": "node ./node_modules/@playwright/test/cli.js show-report",
+    "report:specimens": "node ./node_modules/@playwright/test/cli.js show-report playwright-report-specimens"
   },
   "devDependencies": {
     "typescript": "^5.6.0"

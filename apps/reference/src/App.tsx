@@ -66,8 +66,8 @@ function getAppConvention(): "scaled" | "unscaled" {
 
 function resolveMultiplier(mint: MintInfo, mode: AppMode): number {
   if (mode === "ignore-activation") {
-    // Defect: always use currentMultiplier, ignore activation timestamp
-    return mint.currentMultiplier;
+    // Defect: deliberately retains the old multiplier (1) after activation
+    return 1;
   }
   // Correct: check effective timestamp against current time
   const nowSeconds = BigInt(Math.floor(Date.now() / 1000));
