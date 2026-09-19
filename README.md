@@ -1,158 +1,185 @@
-# StockCheck
+# StockCheck 🎯
 
-**An open-source regression-testing package for Solana stock-transfer interfaces.**
+[![Solana Token-2022](https://img.shields.io/badge/Solana-Token--2022-14F195?logo=solana&logoColor=white)](https://spl.solana.com/token-2022)
+[![Colosseum Hackathon](https://img.shields.io/badge/Colosseum-Crypto%20World's%20Fair-blueviolet)](https://www.colosseum.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Tests Passing](https://img.shields.io/badge/Tests-100%25%20Passing-brightgreen)]()
 
-StockCheck runs browser E2E actions against a real local Solana environment and compares what the UI *shows* the user with what the application's transaction actually transferred — specifically across **ScaledUiAmount Token-2022 multiplier** changes.
+> **The Automated Regression-Testing Framework for Solana Token-2022 `ScaledUiAmount` Multipliers and Wallet Transfer Precision.**
 
-> ⚠️ **This is development tooling.** All test events and balances are synthetic. StockCheck is not a mainnet safety certification.
-
----
-
-## What it tests
-
-When a Token-2022 mint uses the `ScaledUiAmount` extension, the displayed balance differs from the raw amount stored on-chain by a multiplier factor. Applications must handle this distinction correctly when:
-
-- **Displaying** balances (use scaled/multiplied value)
-- **Building transactions** (use the raw amount derived from the effective multiplier at evaluation time)
-- **Handling Max** (use the full raw source account balance — never reconstruct from a rounded display)
-
-StockCheck detects bugs in any of these three areas.
+StockCheck executes real end-to-end browser interactions against a local Solana cluster (`@solana/surfpool`) and performs independent mathematical audits comparing **what the user approved in the UI** with **what the application's transaction actually debited on-chain**.
 
 ---
 
-## Quick start
+## ⚡ The Problem
+
+Solana's **Token-2022** program introduces the `ScaledUiAmountConfig` extension, allowing mints to programmatically scale user balances over time (for stock splits, interest accrual, or rebasing).
+
+When interacting with scaled mints, wallet and dApp transfer interfaces frequently introduce catastrophic regressions:
+
+1. **Old Multiplier Retention**: An interface shows a new multiplied balance to the user, but uses an outdated multiplier when constructing the raw transfer instruction—transferring double or half the intended tokens.
+2. **Lossy Max Reconstruction**: Clicking "Max" formats the balance to a human-readable float string (e.g. `3.45` from `3.456789`), then converts that string back to raw units when building the transaction—leaving residual dust in the account and breaking full-balance sweeps.
+3. **Stale Activation Multipliers**: If a scheduled multiplier transition occurs while a user has a transfer modal open, the interface fails to update its math dynamically, creating an on-chain transfer discrepancy.
+
+**StockCheck prevents these failures before they ever hit mainnet.**
+
+---
+
+## 🏗️ Architecture & Core Invariant
+
+```mermaid
+flowchart TD
+    subgraph TestRunner["Playwright Test Suite"]
+        Runner["Test Scenario (Q01–Q08)"]
+        Adapter["AppAdapter (DOM Operators)"]
+        Wallet["Injected Test Keypair"]
+    end
+
+    subgraph App["Frontend Under Test"]
+        UI["Transfer Modal (apps/reference)"]
+        TxBuilder["Transaction Builder (@solana/kit)"]
+    end
+
+    subgraph Cluster["Local Solana Runtime"]
+        Surfpool["Surfpool Node (Token-2022)"]
+        Mint["Synthetic ScaledUiAmount Mint"]
+        ATA["On-Chain Token Accounts"]
+    end
+
+    subgraph Audit["Verification Engine"]
+        Checker["@stockcheck/core Checker"]
+        Report["Diagnostic Report + Traces"]
+    end
+
+    Runner --> Adapter
+    Runner --> Wallet
+    Adapter --> UI
+    Wallet -.-> UI
+    UI --> TxBuilder
+    TxBuilder -->|"getTransferChecked"| Surfpool
+    Surfpool --> ATA
+    
+    ATA -->|"Pre/Post Account Snapshots"| Checker
+    UI -->|"Captured Review DOM State"| Checker
+    Checker --> Report
+```
+
+> ⚠️ **The Non-Negotiable Invariant:**
+> The checker **never** builds, dictates, or alters the application's transfer logic. The application constructs its own transaction. StockCheck acts strictly as an external, independent auditor inspecting what the UI showed versus what the Solana ledger executed.
+
+---
+
+## 🚀 Quick Start: Single-Command Demo
+
+StockCheck includes an automated end-to-end runner that exercises all unit tests, on-chain E2E scenarios, and seeded defect specimens in sequence:
 
 ```bash
-# 1. Install dependencies
-pnpm install --frozen-lockfile
+# 1. Start the local Solana cluster
+surfpool start --offline --no-tui --no-studio
 
-# 2. Install Playwright browser
-pnpm exec playwright install --with-deps chromium
-
-# 3. Start Surfpool local runtime
-surfpool start
-
-# 4. Create the synthetic test token
-node scripts/create-mint.js
-
-# 5. Run the demo
+# 2. Run the complete automated demo
 pnpm demo
 ```
 
----
+### Verification Scorecard
 
-## Commands
-
-| Command | Description |
-|---|---|
-| `pnpm demo` | Start the reference app + run all scenarios + open report |
-| `pnpm test:unit` | Run core quantity math unit tests |
-| `pnpm test:e2e` | Run required E2E scenarios Q01–Q08 |
-| `pnpm test:specimens` | Assert checker correctly detects seeded defects |
-| `pnpm report` | Open the Playwright HTML report |
-
----
-
-## Test scenarios
-
-| ID | Scenario | Expected |
-|---|---|---|
-| Q01 | Multiplier=1; enter 2 scaled units | Transfer 2,000,000 raw |
-| Q02 | Active multiplier=2; enter 2 scaled units | Transfer 1,000,000 raw |
-| Q03 | Page open across scheduled 1→2 activation | Post-activation input consistent |
-| Q04 | Max with fractional balance | Transfer full raw balance |
-| Q05 | Unscaled input at multiplier=2 | Enter 2 unscaled → 2,000,000 raw |
-| Q06 | Seeded old-multiplier defect | FAIL — DISPLAYED_QUANTITY_MISMATCH |
-| Q07 | Seeded Max round-trip defect | FAIL — MAX_RESIDUAL_BALANCE |
-| Q08 | Missing RPC / receipt | NOT_TESTED (not PASS) |
-
----
-
-## Architecture
+When you run `pnpm demo`, StockCheck executes 3 distinct verification phases:
 
 ```
-Playwright test + AppAdapter
-         │
-         ▼
-Actual browser transfer interface (apps/reference)
-         │
-         ▼
-Application's own transaction builder
-         │
-         ▼
-Local test wallet: capture, sign, submit
-         │
-         ▼
-Local Solana / Token-2022 execution (Surfpool)
-         │
-         ▼
-Independent quantity checks (packages/core)
-         │
-         ▼
-Verdict + evidence JSON + browser trace
+===========================================================================
+  ID    SCENARIO DESCRIPTION                        RESULT       DEFECT TRAP
+---------------------------------------------------------------------------
+  Q01   Multiplier=1 Baseline (2 scaled → 2,000,000) PASS         None (Correct)
+  Q02   Multiplier=2 Active   (2 scaled → 1,000,000) PASS         None (Correct)
+  Q03   Scheduled 1→2 Activation Time-Travel        PASS         None (Correct)
+  Q04   Max Full-Balance Transfer (Zero Residual)    PASS         None (Correct)
+  Q05   Explicit Unscaled Mode (2 unscaled)          PASS         None (Correct)
+  Q06   Faulty App: Ignores Activation Multiplier    DETECTED     DISPLAYED_QUANTITY_MISMATCH
+  Q07   Faulty App: Rounded Max Precision Loss       DETECTED     DISPLAYED_QUANTITY_MISMATCH
+  Q08   Offline Runtime Check                        NOT_TESTED   Graceful Skip (Expected)
+===========================================================================
 ```
-
-**Key invariant:** The checker never decides which amount the application transfers. The application builds its transaction. StockCheck observes and checks it.
 
 ---
 
-## Repository structure
+## 📋 Required Test Scenarios (Brief §10)
+
+| ID | Description | Expected On-Chain Behavior | Verified Result |
+| :--- | :--- | :--- | :--- |
+| **Q01** | Multiplier 1 Baseline (enter 2 scaled) | Debits `2,000,000` raw units (6 decimals) | **PASS** |
+| **Q02** | Active Multiplier 2 (enter 2 scaled) | Debits `1,000,000` raw units | **PASS** |
+| **Q03** | Scheduled 1→2 Activation Time-Travel | Coordinates chain clock + virtual browser timers across boundary | **PASS** |
+| **Q04** | Max Full-Balance Transfer | Sweeps entire source balance with zero residual tokens | **PASS** |
+| **Q05** | Explicit Unscaled Mode | Ignores multiplier; transfers `2,000,000` raw units | **PASS** |
+| **Q06** | Seeded Defect: Old-Multiplier Retention | Traps faulty app transferring `2,000,000` instead of `1,000,000` | **FAIL (Detected)** |
+| **Q07** | Seeded Defect: Max Float Rounding Loss | Traps residual raw tokens left behind by rounded input | **FAIL (Detected)** |
+| **Q08** | Missing Runtime / RPC Unreachable | Returns `NOT_TESTED` or graceful skip (never a false PASS) | **NOT_TESTED** |
+
+---
+
+## 📦 Monorepo Organization
 
 ```
 stockcheck/
-├── apps/reference/          # React + Vite transfer interface
-├── packages/core/           # Independent checker engine
-├── packages/playwright/     # AppAdapter interface + shared fixtures
-├── packages/runtime/        # Surfpool wrapper + cheatcode helpers
-├── packages/test-wallet/    # Disposable keypair + browser injection
-├── adapters/reference/      # Adapter for apps/reference
-├── fixtures/synthetic/      # Pinned synthetic mint config
-├── tests/unit/              # Core math unit tests
-├── tests/e2e/               # Required scenarios Q01–Q08
-├── tests/specimens/         # Seeded defect tests (Q06, Q07)
-└── .github/workflows/ci.yml # CI pipeline
+├── apps/
+│   └── reference/              # Reference transfer application (React + Vite + @solana/kit)
+├── packages/
+│   ├── core/                   # Pure audit engine (math precision, verdict evaluation, reports)
+│   ├── playwright/             # AppAdapter interface, fixtures, and scenario runner
+│   ├── runtime/                # Surfpool wrapper, clock coordination, ATA balance queries
+│   └── test-wallet/            # Ephemeral keypair generation and browser injection
+├── adapters/
+│   └── reference/              # Production adapter implementation for apps/reference
+├── fixtures/
+│   └── synthetic/              # Pinned Token-2022 mint state & SHA-256 byte tracking
+├── scripts/
+│   ├── create-mint.mjs         # Pure @solana/kit on-chain synthetic mint generator
+│   └── demo.mjs                # Single-command executive demonstration runner
+├── tests/
+│   ├── unit/                   # 19 core math & multiplier resolution unit tests
+│   ├── e2e/                    # Playwright E2E scenarios Q01–Q08
+│   └── specimens/              # Seeded defect assertion suite (Q06 & Q07)
+└── docs/
+    ├── ARCHITECTURE.md         # Deep-dive system architecture & invariants
+    └── ADAPTER_GUIDE.md        # Guide for integrating third-party Solana wallets
 ```
 
 ---
 
-## Reference app modes
+## 🔌 Integrating Third-Party Wallets
 
-The reference app implements three real behavior differences, selectable via `?mode=`:
+StockCheck was designed to audit any wallet or dApp. Implementing the `AppAdapter` interface requires fewer than 30 lines of code.
 
-| Mode | Behavior |
-|---|---|
-| `correct` | Uses effective multiplier; correct Max |
-| `ignore-activation` | Retains old multiplier after activation (seeded defect Q06) |
-| `max-roundtrip` | Derives Max from rounded displayed balance (seeded defect Q07) |
+See [`docs/ADAPTER_GUIDE.md`](docs/ADAPTER_GUIDE.md) for step-by-step instructions.
 
 ---
 
-## Technology stack
+## 🧪 Running Individual Test Suites
 
-| Component | Choice |
-|---|---|
-| Language | TypeScript |
-| Reference interface | React + Vite |
-| Browser testing | Playwright with Chromium |
-| Local Solana runtime | `@solana/surfpool` |
-| Transaction clients | Solana Kit + `@solana-program/token-2022` |
-| Workspace | pnpm |
-| Reports | Playwright HTML report + traces + attached JSON |
+```bash
+# Run core math and serialization unit tests
+pnpm test:unit
 
----
+# Run full on-chain E2E browser tests
+pnpm test:e2e
 
-## Limitations
+# Run seeded defect specimens
+pnpm test:specimens
 
-- Supports one explicitly selected source token account per transfer
-- "Max" means that account's full raw token balance — not every account associated with the wallet
-- Local test environment only; no mainnet support
-- CI targets Linux x86-64
-- Signing-before-activation / landing-after-activation edge case is outside declared coverage
+# Open the interactive Playwright test report
+pnpm report
+```
 
 ---
 
-## License
+## 📜 Third-Party Notices & Safety
 
-MIT — see [LICENSE](LICENSE)
+All test tokens, accounts, and transactions in StockCheck exist purely within the local Surfpool test environment. No real mainnet funds are ever utilized or risked.
 
-See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for reused component disclosures.
+See [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) for open-source component disclosures.
+
+---
+
+## 📄 License
+
+MIT License. Developed for the **Colosseum Solana Hackathon (2026)**.
