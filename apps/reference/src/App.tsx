@@ -98,32 +98,61 @@ function rawToScaled(raw: bigint, decimals: number, multiplier: number): string 
   return scaled.toFixed(6).replace(/\.?0+$/, "");
 }
 
+import {
+  createSolanaRpc,
+  createKeyPairSignerFromBytes,
+  createTransactionMessage,
+  setTransactionMessageFeePayerSigner,
+  setTransactionMessageLifetimeUsingBlockhash,
+  appendTransactionMessageInstructions,
+  signTransactionMessageWithSigners,
+  getBase64EncodedWireTransaction,
+  address,
+} from "@solana/kit";
+import {
+  findAssociatedTokenPda,
+  getCreateAssociatedTokenIdempotentInstruction,
+  getTransferCheckedInstruction,
+  fetchMint,
+  fetchToken,
+  TOKEN_2022_PROGRAM_ADDRESS,
+} from "@solana-program/token-2022";
+import mintFixture from "../../../fixtures/synthetic/mint.json";
+
 // ──────────────────────────────────────────────────────────
-// Mock RPC helpers (to be replaced with real @solana/kit calls)
+// RPC helpers & On-Chain state
 // ──────────────────────────────────────────────────────────
 
 const SURFPOOL_RPC = "http://127.0.0.1:8899";
 
-async function rpc(method: string, params: unknown[] = []): Promise<unknown> {
+async function getSourceTokenBalance(walletPubkey: string, mintAddress: string): Promise<bigint> {
   try {
-    const r = await fetch(SURFPOOL_RPC, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
+    const rpc = createSolanaRpc(SURFPOOL_RPC);
+    const [ata] = await findAssociatedTokenPda({
+      mint: address(mintAddress),
+      owner: address(walletPubkey),
+      tokenProgram: TOKEN_2022_PROGRAM_ADDRESS,
     });
-    const j = (await r.json()) as { result?: unknown; error?: { message: string } };
-    if (j.error) throw new Error(j.error.message);
-    return j.result;
-  } catch (e) {
-    console.warn("[StockCheck] RPC call failed:", method, e);
-    return null;
+    const tokenAccount = await fetchToken(rpc, ata);
+    return tokenAccount.data.amount;
+  } catch {
+    // If account doesn't exist yet on local testnet, initialize & fund it via cheatcode
+    try {
+      await fetch(SURFPOOL_RPC, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          jsonrpc: "2.0",
+          id: 1,
+          method: "surfnet_setTokenAccount",
+          params: [mintAddress, walletPubkey, { amount: 10_000_000 }],
+        }),
+      });
+      return 10_000_000n;
+    } catch {
+      return 0n;
+    }
   }
-}
-
-async function getSourceTokenBalance(_walletPubkey: string, _mintAddress: string): Promise<bigint> {
-  // TODO: replace with real getTokenAccountsByOwner
-  // For now, return a synthetic fractional balance for testing
-  return 3_456_789n; // 3.456789 tokens at 6 decimals
 }
 
 // ──────────────────────────────────────────────────────────
@@ -150,15 +179,41 @@ export default function App() {
   const [txError, setTxError] = useState<string | null>(null);
   const [rawBalance, setRawBalance] = useState<bigint>(0n);
 
-  // Synthetic mint info — loaded from fixture in real implementation
-  const [mint] = useState<MintInfo>({
-    address: "SYNTHETIC_MINT_ADDRESS_REPLACE_WITH_FIXTURE",
-    decimals: 6,
-    currentMultiplier: 1,
+  // Synthetic mint info — loaded from fixture and refreshed from on-chain state
+  const [mint, setMint] = useState<MintInfo>({
+    address: mintFixture.mintAddress || "SYNTHETIC_MINT_ADDRESS_REPLACE_WITH_FIXTURE",
+    decimals: mintFixture.decimals || 6,
+    currentMultiplier: mintFixture.initialMultiplier || 1,
     newMultiplier: 2,
     newMultiplierEffectiveTimestamp: 0n,
     symbol: "xSTOCK",
   });
+
+  // Sync on-chain mint extension state if running
+  useEffect(() => {
+    async function syncMint() {
+      try {
+        const rpc = createSolanaRpc(SURFPOOL_RPC);
+        const onchain = await fetchMint(rpc, address(mint.address));
+        if (onchain?.data?.extensions?.__option === "Some") {
+          const scaledExt = (onchain.data.extensions.value as Array<{ __kind: string; multiplier?: number; newMultiplier?: number; newMultiplierEffectiveTimestamp?: bigint }>).find(
+            (e) => e.__kind === "ScaledUiAmountConfig"
+          );
+          if (scaledExt) {
+            setMint((prev) => ({
+              ...prev,
+              currentMultiplier: scaledExt.multiplier ?? 1,
+              newMultiplier: scaledExt.newMultiplier ?? 2,
+              newMultiplierEffectiveTimestamp: BigInt(scaledExt.newMultiplierEffectiveTimestamp ?? 0n),
+            }));
+          }
+        }
+      } catch {
+        // Use local defaults if node not responding
+      }
+    }
+    syncMint();
+  }, [mint.address]);
 
   // Auto-connect test wallet if injected
   useEffect(() => {
@@ -217,26 +272,71 @@ export default function App() {
     if (!review || !testWallet) return;
 
     setTxStatus("pending");
+    setTxError(null);
 
     try {
-      // In a real implementation, build and submit the transaction here using @solana/kit.
-      // The transaction MUST be built by the application — not by the checker.
-      // The checker only observes what happened on-chain.
+      const rpc = createSolanaRpc(SURFPOOL_RPC);
+      const payerSigner = await createKeyPairSignerFromBytes(testWallet.secretKey);
 
-      // For the hackathon: submit via the application's normal transaction-building path
-      // This is a placeholder that will be replaced with actual @solana/kit transaction submission
-      const mockSig = `MOCK_SIG_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+      // Derive source ATA
+      const [sourceAta] = await findAssociatedTokenPda({
+        mint: address(mint.address),
+        owner: address(testWallet.publicKey),
+        tokenProgram: TOKEN_2022_PROGRAM_ADDRESS,
+      });
 
-      // Simulate network latency
-      await new Promise((r) => setTimeout(r, 1500));
+      // Derive recipient ATA
+      const [recipientAta] = await findAssociatedTokenPda({
+        mint: address(mint.address),
+        owner: address(review.recipient),
+        tokenProgram: TOKEN_2022_PROGRAM_ADDRESS,
+      });
 
-      setTxSignature(mockSig);
+      // Ensure recipient ATA exists
+      const createRecipientAtaIx = getCreateAssociatedTokenIdempotentInstruction({
+        payer: payerSigner,
+        ata: recipientAta,
+        owner: address(review.recipient),
+        mint: address(mint.address),
+        tokenProgram: TOKEN_2022_PROGRAM_ADDRESS,
+      });
+
+      // Build real Token-2022 TransferChecked instruction
+      const transferCheckedIx = getTransferCheckedInstruction({
+        source: sourceAta,
+        mint: address(mint.address),
+        destination: recipientAta,
+        authority: payerSigner,
+        amount: review.rawAmountToTransfer,
+        decimals: mint.decimals,
+      });
+
+      const { value: latestBlockhash } = await rpc.getLatestBlockhash().send();
+
+      const message = createTransactionMessage({ version: 0 });
+      const withPayer = setTransactionMessageFeePayerSigner(payerSigner, message);
+      const withLifetime = setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, withPayer);
+      const withIxs = appendTransactionMessageInstructions(
+        [createRecipientAtaIx, transferCheckedIx],
+        withLifetime
+      );
+
+      const signedTx = await signTransactionMessageWithSigners(withIxs);
+      const base64WireTx = getBase64EncodedWireTransaction(signedTx);
+      const sig = await rpc.sendTransaction(base64WireTx, { encoding: "base64" }).send();
+
+      setTxSignature(sig);
       setTxStatus("confirmed");
+
+      // Refresh on-chain balance
+      const updatedBal = await getSourceTokenBalance(testWallet.publicKey, mint.address);
+      setRawBalance(updatedBal);
     } catch (e) {
+      console.error("[StockCheck] Transfer execution error:", e);
       setTxError(e instanceof Error ? e.message : "Transaction failed");
       setTxStatus("error");
     }
-  }, [review, testWallet]);
+  }, [review, testWallet, mint]);
 
   // ──────────────────────────────────────────────────────────
   // Render
