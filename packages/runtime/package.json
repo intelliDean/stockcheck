@@ -1,0 +1,25 @@
+{
+  "name": "@stockcheck/runtime",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc --project tsconfig.json",
+    "test:unit": "echo 'no unit tests for runtime'",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@solana/kit": "^2.1.0",
+    "@solana-program/token-2022": "^0.4.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0"
+  }
+}

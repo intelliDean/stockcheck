@@ -1,0 +1,93 @@
+name: StockCheck CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "pnpm"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck all packages
+        run: |
+          pnpm --filter "@stockcheck/core" typecheck
+          pnpm --filter "@stockcheck/runtime" typecheck
+          pnpm --filter "@stockcheck/test-wallet" typecheck
+          pnpm --filter "@stockcheck/playwright" typecheck
+
+      - name: Run unit tests
+        run: pnpm test:unit
+
+  e2e-tests:
+    name: E2E Tests (with Surfpool)
+    runs-on: ubuntu-latest
+    needs: unit-tests
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "pnpm"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Install Surfpool CLI
+        run: curl -sL https://run.surfpool.run/ | bash
+        env:
+          SURFPOOL_OFFLINE: "true"
+
+      - name: Start Surfpool
+        run: surfpool start --detach --offline
+
+      - name: Create synthetic mint
+        run: node --input-type=module scripts/create-mint.js
+
+      - name: Run required E2E suite
+        run: pnpm test:e2e
+        env:
+          CI: "true"
+
+      - name: Run specimen tests (assert checker detects defects)
+        run: pnpm test:specimens
+        env:
+          CI: "true"
+
+      - name: Upload Playwright reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-reports
+          path: |
+            playwright-report/
+            playwright-report-specimens/
+          retention-days: 30

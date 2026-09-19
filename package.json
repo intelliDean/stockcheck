@@ -1,0 +1,20 @@
+{
+  "name": "stockcheck",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "demo": "pnpm --filter reference dev & pnpm test:e2e --project=demo",
+    "test:unit": "pnpm --filter @stockcheck/core test:unit && pnpm --filter @stockcheck/runtime test:unit",
+    "test:e2e": "pnpm --filter @stockcheck/playwright-tests test:e2e",
+    "test:specimens": "pnpm --filter @stockcheck/playwright-tests test:specimens",
+    "report": "pnpm --filter @stockcheck/playwright-tests report"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0"
+  },
+  "engines": {
+    "node": ">=22.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "packageManager": "pnpm@9.12.0"
+}

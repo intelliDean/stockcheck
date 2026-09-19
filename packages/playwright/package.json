@@ -1,0 +1,29 @@
+{
+  "name": "@stockcheck/playwright",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc --project tsconfig.json",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@stockcheck/core": "workspace:*",
+    "@stockcheck/runtime": "workspace:*",
+    "@stockcheck/test-wallet": "workspace:*"
+  },
+  "peerDependencies": {
+    "@playwright/test": "^1.47.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.47.0",
+    "typescript": "^5.6.0"
+  }
+}
