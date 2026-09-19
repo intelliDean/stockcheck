@@ -12,8 +12,8 @@ import {
   checkTransfer,
   checkMaxTransfer,
   formatReport,
-} from "../src/checker.js";
-import type { TestEvidence, MintState, AccountSnapshot } from "../src/types.js";
+} from "@stockcheck/core";
+import type { TestEvidence, MintState, AccountSnapshot } from "@stockcheck/core";
 
 // ──────────────────────────────────────────────────────────
 // Test fixtures

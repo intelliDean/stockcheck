@@ -1,6 +1,5 @@
 export default {
-  preset: "ts-jest/presets/default-esm",
-  extensionsToTreatAsEsm: [".ts"],
+  preset: "ts-jest",
   testEnvironment: "node",
   testMatch: ["**/*.test.ts"],
   moduleNameMapper: {
@@ -11,11 +10,7 @@ export default {
     "^.+\\.ts$": [
       "ts-jest",
       {
-        useESM: true,
-        tsconfig: {
-          extends: "../../tsconfig.base.json",
-          compilerOptions: { module: "ESNext", moduleResolution: "bundler" },
-        },
+        tsconfig: "./tsconfig.json",
       },
     ],
   },

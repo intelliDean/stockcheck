@@ -1,0 +1,13 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "outDir": "./dist",
+    "rootDir": ".",
+    "paths": {
+      "@stockcheck/core": ["../../packages/core/src/index.ts"]
+    }
+  },
+  "include": ["./**/*.ts", "../../packages/core/src/**/*.ts"]
+}
