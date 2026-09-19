@@ -24,6 +24,10 @@ test-wallet-*.json
 .surfpool/
 surfpool.log
 
+# Demo
+demo/
+*.mp4
+
 # OS
 .DS_Store
 Thumbs.db
