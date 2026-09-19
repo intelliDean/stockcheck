@@ -593,6 +593,20 @@ export default function App() {
                 {txSignature}
               </div>
             </div>
+            <button
+              className="review-btn"
+              data-testid="new-transfer-button"
+              style={{ marginTop: "16px" }}
+              onClick={() => {
+                setReview(null);
+                setTxStatus("idle");
+                setTxSignature(null);
+                setAmount("");
+                setRecipient("");
+              }}
+            >
+              Start Another Transfer
+            </button>
           </div>
         )}
       </main>

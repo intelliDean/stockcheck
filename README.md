@@ -1,4 +1,4 @@
-# StockCheck 🎯
+# StockCheck 
 
 [![Solana Token-2022](https://img.shields.io/badge/Solana-Token--2022-14F195?logo=solana&logoColor=white)](https://spl.solana.com/token-2022)
 [![Colosseum Hackathon](https://img.shields.io/badge/Colosseum-Crypto%20World's%20Fair-blueviolet)](https://www.colosseum.org/)
