@@ -62,7 +62,7 @@ const faultyTest = createStockCheckTest(faultyAdapter);
 
 faultyTest(
   "Q06: ignore-activation defect → checker correctly returns FAIL (genuine mismatch)",
-  async ({ page, recipientWallet, adapter }) => {
+  async ({ page, senderWallet, recipientWallet, adapter }) => {
     if (!(await isSurfpoolRunning())) {
       test.skip(true, "NOT_TESTED: Surfpool not running");
     }
@@ -91,6 +91,7 @@ faultyTest(
           "Seeded old-multiplier defect — app ignores activation, transfers double the correct amount",
         mintAddress: mintState.mintAddress,
         mintState,
+        senderAddress: senderWallet.publicKey,
         recipientAddress: recipientWallet.publicKey,
         amountToEnter: "2",
         readAccountSnapshot,
@@ -120,7 +121,7 @@ faultyTest(
 
 faultyTest(
   "Q07: max-roundtrip defect → checker correctly detects residual raw tokens (FAIL)",
-  async ({ page, recipientWallet, adapter }) => {
+  async ({ page, senderWallet, recipientWallet, adapter }) => {
     if (!(await isSurfpoolRunning())) {
       test.skip(true, "NOT_TESTED: Surfpool not running");
     }
@@ -140,17 +141,18 @@ faultyTest(
       {
         scenarioId: "Q07",
         scenarioDescription:
-          "Seeded Max round-trip defect — app derives Max from rounded displayed balance, leaves residual",
+          "Seeded Max round-trip defect — app rounds displayed balance then reconstructs amount, leaving residual tokens",
         mintAddress: mintState.mintAddress,
         mintState,
+        senderAddress: senderWallet.publicKey,
         recipientAddress: recipientWallet.publicKey,
-        amountToEnter: "0",
+        amountToEnter: "", // Max will set this
         isMax: true,
         readAccountSnapshot,
         fixtureIdentity: "synthetic-v1-6dec",
         runtimeIdentity: "surfpool-local",
       },
-      0n
+      0n // Max transfer: remainder should be 0n
     );
 
     console.log("=== SPECIMEN Q07 ===");

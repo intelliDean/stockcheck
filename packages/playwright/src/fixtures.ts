@@ -17,6 +17,7 @@ import {
   isSurfpoolRunning,
   getClockTimestampSeconds,
   airdropSol,
+  mintTokensTo,
   readAccountSnapshot as runtimeReadAccountSnapshot,
 } from "@stockcheck/runtime";
 import type {
@@ -60,6 +61,7 @@ export function createStockCheckTest(adapter: AppAdapter) {
       const wallet = await generateTestKeypair();
       try {
         await airdropSol(wallet.publicKey, 10_000_000_000n);
+        await mintTokensTo(wallet.publicKey, 3_456_789n);
       } catch {
         // Non-fatal if Surfpool is offline
       }
@@ -144,8 +146,10 @@ export async function runScenario(
   const sender = senderAddress || `source-for-${recipientAddress}`;
   const getSnapshot = async (addr: string) => {
     if (readAccountSnapshot) {
-      const res = await readAccountSnapshot(addr);
-      if (res && res.rawBalance > 0n) return res;
+      try {
+        const res = await readAccountSnapshot(addr);
+        if (res && res.slot > 0n) return res;
+      } catch {}
     }
     return runtimeReadAccountSnapshot(addr, mintAddress);
   };

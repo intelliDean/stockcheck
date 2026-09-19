@@ -136,22 +136,7 @@ async function getSourceTokenBalance(walletPubkey: string, mintAddress: string):
     const tokenAccount = await fetchToken(rpc, ata);
     return tokenAccount.data.amount;
   } catch {
-    // If account doesn't exist yet on local testnet, initialize & fund it via cheatcode
-    try {
-      await fetch(SURFPOOL_RPC, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          jsonrpc: "2.0",
-          id: 1,
-          method: "surfnet_setTokenAccount",
-          params: [mintAddress, walletPubkey, { amount: 10_000_000 }],
-        }),
-      });
-      return 10_000_000n;
-    } catch {
-      return 0n;
-    }
+    return 0n;
   }
 }
 
@@ -178,6 +163,7 @@ export default function App() {
   const [txSignature, setTxSignature] = useState<string | null>(null);
   const [txError, setTxError] = useState<string | null>(null);
   const [rawBalance, setRawBalance] = useState<bigint>(0n);
+  const [assetDropdownOpen, setAssetDropdownOpen] = useState(false);
 
   // Synthetic mint info — loaded from fixture and refreshed from on-chain state
   const [mint, setMint] = useState<MintInfo>({
@@ -236,15 +222,16 @@ export default function App() {
   const unitLabel = "scaled units";
 
   // ── Max button ──────────────────────────────────────────
+  const [isMaxClicked, setIsMaxClicked] = useState(false);
+
   const handleMax = useCallback(() => {
+    setIsMaxClicked(true);
     if (mode === "max-roundtrip") {
-      // Defect: reconstruct from rounded displayed balance (loses precision)
-      const roundedDisplayed = parseFloat(
-        parseFloat(displayedBalance).toFixed(2) // deliberate rounding
-      ).toString();
-      setAmount(roundedDisplayed);
+      // Defect: truncate to 2 decimal places from displayed balance, leaving residual raw tokens
+      const truncated = (Math.floor(parseFloat(displayedBalance) * 100) / 100).toString();
+      setAmount(truncated);
     } else {
-      // Correct: use the scaled equivalent of the FULL raw balance
+      // Correct: use scaled equivalent of full raw balance
       setAmount(rawToScaled(rawBalance, mint.decimals, effectiveMultiplier));
     }
   }, [mode, rawBalance, mint.decimals, effectiveMultiplier, displayedBalance]);
@@ -253,7 +240,10 @@ export default function App() {
   const handleReview = useCallback(() => {
     if (!amount || !recipient) return;
 
-    const rawToTransfer = scaledToRaw(amount, mint.decimals, effectiveMultiplier);
+    let rawToTransfer = scaledToRaw(amount, mint.decimals, effectiveMultiplier);
+    if (isMaxClicked && mode !== "max-roundtrip") {
+      rawToTransfer = rawBalance;
+    }
 
     setReview({
       amount: parseFloat(amount).toString(),
@@ -265,7 +255,7 @@ export default function App() {
     setTxStatus("idle");
     setTxSignature(null);
     setTxError(null);
-  }, [amount, recipient, mint, effectiveMultiplier, unitLabel]);
+  }, [amount, recipient, mint, effectiveMultiplier, unitLabel, isMaxClicked, mode, rawBalance]);
 
   // ── Confirm / Execute ───────────────────────────────────
   const handleConfirm = useCallback(async () => {
@@ -390,6 +380,7 @@ export default function App() {
           </div>
           <div
             data-testid="asset-selector"
+            onClick={() => setAssetDropdownOpen((prev) => !prev)}
             style={{
               background: "var(--bg-input)",
               border: "1px solid var(--border)",
@@ -405,15 +396,27 @@ export default function App() {
               {mint.symbol}
             </span>
             <span style={{ fontSize: "11px", color: "var(--text-muted)", fontFamily: "'JetBrains Mono', monospace" }}>
-              ×{effectiveMultiplier}
+              ×{effectiveMultiplier} ▾
             </span>
           </div>
-          <div
-            data-testid={`asset-option-${mint.address}`}
-            style={{ display: "none" }}
-          >
-            {mint.symbol}
-          </div>
+          {assetDropdownOpen && (
+            <div
+              data-testid={`asset-option-${mint.address}`}
+              onClick={() => setAssetDropdownOpen(false)}
+              style={{
+                background: "var(--bg-card)",
+                border: "1px solid var(--border)",
+                padding: "10px 14px",
+                borderRadius: "var(--radius-sm)",
+                marginTop: "4px",
+                cursor: "pointer",
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: "13px",
+              }}
+            >
+              ✓ {mint.symbol} — {mint.address.slice(0, 6)}…{mint.address.slice(-4)}
+            </div>
+          )}
         </div>
 
         {/* Recipient */}
