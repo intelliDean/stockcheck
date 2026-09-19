@@ -12,9 +12,6 @@ test-results/
 
 # Keys and secrets — NEVER commit
 fixtures/synthetic/mint-keypair.json
-fixtures/synthetic/*.json
-!fixtures/synthetic/.gitkeep
-# Disposable test keys are regenerated per run
 *.keypair.json
 test-wallet-*.json
 

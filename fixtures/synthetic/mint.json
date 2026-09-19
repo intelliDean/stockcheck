@@ -1,0 +1,11 @@
+{
+  "mintAddress": "DBdB2LW72YhaHoz5Gy5jeLT3aDFVPhoF862jHLoV75GY",
+  "tokenProgram": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
+  "decimals": 6,
+  "initialMultiplier": 1,
+  "authorityAddress": "D69hZbcQDoTD93cj8R7v96wFbcs5JehiryoCeLS5T5As",
+  "mintBytesHashAtCreation": "798c2f1419b03ee93ae401ea5b1e83cf98e947c9fd5532a972479ef45e4d27c2",
+  "createdAt": "2026-09-19T20:23:25.834Z",
+  "rpcUrl": "http://127.0.0.1:8899",
+  "note": "Synthetic token — LOCAL TEST ENVIRONMENT ONLY. Not real money."
+}
