@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>StockCheck — Automated Test Runner</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap');
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      width: 1440px;
+      height: 900px;
+      background: #0d1117;
+      color: #c9d1d9;
+      font-family: 'JetBrains Mono', monospace;
+      padding: 30px 40px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .window-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #161b22;
+      padding: 12px 18px;
+      border-radius: 12px 12px 0 0;
+      border: 1px solid #30363d;
+      border-bottom: none;
+    }
+    .dot { width: 12px; height: 12px; border-radius: 50%; }
+    .dot-red { background: #ff5f56; }
+    .dot-yellow { background: #ffbd2e; }
+    .dot-green { background: #27c93f; }
+    .window-title {
+      margin-left: 12px;
+      color: #8b949e;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .terminal-body {
+      flex: 1;
+      background: #090d13;
+      border: 1px solid #30363d;
+      border-radius: 0 0 12px 12px;
+      padding: 24px;
+      font-size: 13px;
+      line-height: 1.6;
+      overflow-y: auto;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.6);
+    }
+    .cyan { color: #58a6ff; font-weight: 700; }
+    .green { color: #3fb950; font-weight: 700; }
+    .purple { color: #bc8cff; font-weight: 700; }
+    .yellow { color: #d29922; }
+    .red { color: #f85149; font-weight: 700; }
+    .dim { color: #6e7681; }
+    .bold { font-weight: 700; }
+    .banner {
+      color: #58a6ff;
+      font-size: 10px;
+      line-height: 1.15;
+      margin-bottom: 16px;
+    }
+    .section-title {
+      color: #ffffff;
+      font-weight: 700;
+      margin-top: 14px;
+      margin-bottom: 4px;
+      border-bottom: 1px solid #21262d;
+      padding-bottom: 4px;
+    }
+    .scorecard {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-top: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="window-header">
+    <span class="dot dot-red"></span>
+    <span class="dot dot-yellow"></span>
+    <span class="dot dot-green"></span>
+    <span class="window-title">bash — pnpm demo (Automated Regression Verification Pipeline)</span>
+  </div>
+  <div class="terminal-body">
+    <div class="banner">
+  ╔═══════════════════════════════════════════════════════════════════════════╗
+  ║    ███████╗████████╗ ██████╗  ██████╗██╗  ██╗ ██████╗██╗  ██╗███████╗██╗  ║
+  ║    ██╔════╝╚══██╔══╝██╔═══██╗██╔════╝██║ ██╔╝██╔════╝██║  ██║██╔════╝██║  ║
+  ║    ███████╗   ██║   ██║   ██║██║     █████═╝ ██║     ███████║█████╗  ██║  ║
+  ║    ╚════██║   ██║   ██║   ██║██║     ██╔═██╗ ██║     ██╔══██║██╔══╝  ██║  ║
+  ║    ███████║   ██║   ╚██████╔╝╚██████╗██║ ╚██╗╚██████╗██║  ██║███████╗█████╗
+  ║    ╚══════╝   ╚═╝    ╚═════╝  ╚═════╝╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝╚══════╝╚════╝
+  ║      Solana Token-2022 ScaledUiAmount Regression Testing Framework       ║
+  ║      Colosseum Hackathon — Crypto World's Fair Submission (2026)          ║
+  ╚═══════════════════════════════════════════════════════════════════════════╝
+    </div>
+
+    <div class="section-title">1. SYSTEM & RUNTIME VERIFICATION</div>
+    <div><span class="green">✓</span> Surfpool RPC node running on <span class="cyan">http://127.0.0.1:8899</span></div>
+    <div><span class="green">✓</span> Synthetic Mint Fixture loaded: <span class="cyan">Fa9z6sr6MCH3DDMhbHgbZHPmFpa16Ppx7GAcAUHkEjjc</span></div>
+    <div class="dim">  • Program: TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb  • Decimals: 6  • Multiplier: 1x</div>
+    <div><span class="green">✓</span> Reference Web App running on <span class="cyan">http://localhost:5173</span></div>
+
+    <div class="section-title">2. PHASE 1: CORE UNIT & CONVERSION ENGINE (19 tests)</div>
+    <div>  Running math precision, BigInt bounds, multiplier schedule, and evidence tests...</div>
+    <div><span class="green">✓ parseBigInt</span> parses valid strings, rejects floats, non-integers, hex</div>
+    <div><span class="green">✓ serializeBigInt</span> handles values > Number.MAX_SAFE_INTEGER without scientific notation</div>
+    <div><span class="green">✓ resolveEffectiveMultiplier</span> returns currentMultiplier before T, newMultiplier at T and T+1</div>
+    <div><span class="green">✓ checkTransfer & checkMaxTransfer</span> correctly evaluates raw delta vs UI claims</div>
+    <div><span class="green">✓ All 19 Core unit tests passed cleanly in 2.0s.</span></div>
+
+    <div class="section-title">3. PHASE 2: LIVE ON-CHAIN E2E REGRESSION SUITE (Q01–Q05, Q08)</div>
+    <div><span class="green">✓ Q01:</span> Multiplier 1 Baseline (enter 2 scaled) → transfers 2,000,000 raw <span class="dim">[Tx: 5DDQ9QiWMGT...]</span></div>
+    <div><span class="green">✓ Q02:</span> Multiplier 2 Active   (enter 2 scaled) → transfers 1,000,000 raw <span class="dim">[Tx: 3JtpLeUUQeu...]</span></div>
+    <div><span class="green">✓ Q03:</span> Scheduled 1→2 Time-Travel across Clock → transfers 1,000,000 raw <span class="dim">[Tx: 5jgFKaBCh5t...]</span></div>
+    <div><span class="green">✓ Q04:</span> Max Full-Balance Transfer (fractional balance) → 0 residual <span class="dim">[Tx: 4gNKa2gj2wX...]</span></div>
+    <div><span class="green">✓ Q05:</span> Explicit Unscaled Mode (enter 2 unscaled) → transfers 2,000,000 raw <span class="dim">[Tx: 4j4d14N6GPo...]</span></div>
+    <div><span class="yellow">- Q08:</span> Missing Surfpool runtime check → <span class="yellow">NOT_TESTED</span> (Graceful Skip)</div>
+
+    <div class="section-title">4. PHASE 3: SEEDED DEFECT DETECTION SUITE (Q06 & Q07)</div>
+    <div><span class="red">⚠ SPECIMEN Q06:</span> Seeded Old-Multiplier Defect Trapped: <span class="red">FAIL — DISPLAYED_QUANTITY_MISMATCH</span></div>
+    <div class="dim">  Observed debit 2,000,000 raw ≠ Expected 1,000,000 raw. StockCheck caught the bug!</div>
+    <div><span class="red">⚠ SPECIMEN Q07:</span> Seeded Max Float-Rounding Defect Trapped: <span class="red">FAIL — DISPLAYED_QUANTITY_MISMATCH</span></div>
+    <div class="dim">  Observed debit 3,450,000 raw leaves 6,789 residual dust. StockCheck caught the bug!</div>
+
+    <div class="scorecard">
+      <div class="bold">5. EXECUTIVE SUMMARY & VERDICT SCORECARD</div>
+      <div class="dim">═══════════════════════════════════════════════════════════════════════════</div>
+      <div>Q01 Multiplier=1 Baseline (2 scaled → 2,000,000)  <span class="green">PASS</span>       None (Correct)</div>
+      <div>Q02 Multiplier=2 Active   (2 scaled → 1,000,000)  <span class="green">PASS</span>       None (Correct)</div>
+      <div>Q03 Scheduled 1→2 Activation Time-Travel        <span class="green">PASS</span>       None (Correct)</div>
+      <div>Q04 Max Full-Balance Transfer (Zero Residual)    <span class="green">PASS</span>       None (Correct)</div>
+      <div>Q05 Explicit Unscaled Mode (2 unscaled)          <span class="green">PASS</span>       None (Correct)</div>
+      <div>Q06 Faulty App: Ignores Activation Multiplier    <span class="green">DETECTED</span>   <span class="red">DISPLAYED_QUANTITY_MISMATCH</span></div>
+      <div>Q07 Faulty App: Rounded Max Precision Loss       <span class="green">DETECTED</span>   <span class="red">DISPLAYED_QUANTITY_MISMATCH</span></div>
+      <div>Q08 Offline Runtime Check                        <span class="yellow">NOT_TESTED</span> Graceful Skip (Expected)</div>
+      <div class="dim">═══════════════════════════════════════════════════════════════════════════</div>
+      <div class="green bold" style="margin-top: 6px;">★ VERDICT: READY FOR SUBMISSION TO COLOSSEUM HACKATHON ★</div>
+    </div>
+  </div>
+</body>
+</html>
