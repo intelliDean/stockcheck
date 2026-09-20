@@ -28,7 +28,17 @@ export interface TransferFlowResult {
 }
 
 /**
- * Executes the complete UI interaction flow for a token transfer using the configured adapter.
+ * Execute the complete UI interaction flow for a token transfer using the configured adapter.
+ *
+ * Injects the mint state into the browser via `window.__STOCKCHECK_MINT_STATE__`, then
+ * drives the adapter through the standard lifecycle:
+ * open screen → connect wallet → select token → enter recipient/amount (or click Max)
+ * → open review panel → capture review DOM state → confirm and await receipt.
+ *
+ * @param page - Playwright `Page` instance for the test
+ * @param adapter - The `AppAdapter` implementation under test
+ * @param opts - Transfer parameters (mint, recipient, amount string, Max flag)
+ * @returns Captured review panel state and the transaction signature (or `null` if receipt was not shown)
  */
 export async function executeTransferFlow(
   page: Page,

@@ -10,7 +10,14 @@ import { serializeBigInt } from "./bigint.js";
 
 /**
  * Format a structured text report for a test result.
- * Format follows §11 of the project brief exactly.
+ *
+ * Output conforms exactly to §11 of the project specification:
+ * a PASS/FAIL header, scenario metadata, quantity comparison lines,
+ * and chain/fixture identity fields — all separated by newlines.
+ *
+ * @param verdict - The verdict returned by `checkTransfer` or `checkMaxTransfer`
+ * @param evidence - The full `TestEvidence` bundle for the evaluated scenario
+ * @returns Multi-line string report ready for logging or file output
  */
 export function formatReport(verdict: Verdict, evidence: TestEvidence): string {
   const lines: string[] = [];

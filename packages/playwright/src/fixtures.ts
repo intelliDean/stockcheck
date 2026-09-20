@@ -49,6 +49,20 @@ export interface StockCheckFixtures {
 // Base fixture factory
 // ──────────────────────────────────────────────────────────
 
+/**
+ * Create a Playwright `test` object pre-wired with StockCheck fixtures.
+ *
+ * Extends Playwright's `base.test` with three fixtures:
+ * - `adapter` — the configured `AppAdapter` instance
+ * - `senderWallet` — a freshly generated keypair, airdropped 10 SOL and 3,456,789 raw tokens
+ * - `recipientWallet` — a freshly generated keypair (no pre-funding)
+ *
+ * The sender wallet keypair is injected into the page via `window.__TEST_WALLET__`
+ * before any navigation, so the app can auto-connect without user interaction.
+ *
+ * @param adapter - The `AppAdapter` implementation to bind for all tests in this suite
+ * @returns A Playwright `test` function extended with `StockCheckFixtures`
+ */
 export function createStockCheckTest(adapter: AppAdapter) {
   return base.extend<StockCheckFixtures>({
     adapter: async ({}, use) => {
@@ -115,8 +129,20 @@ export interface ScenarioOptions {
 }
 
 /**
- * Run a complete scenario: navigate → input → review → confirm → check.
- * Returns the full verdict and evidence bundle.
+ * Run a complete end-to-end transfer scenario and return the verdict and evidence.
+ *
+ * Orchestrates the full lifecycle:
+ * 1. Capture pre-transfer on-chain snapshots for sender and recipient.
+ * 2. Drive the UI transfer via `executeTransferFlow`.
+ * 3. If no receipt signature, return a `NOT_TESTED` verdict.
+ * 4. Capture post-transfer snapshots.
+ * 5. Assemble `TestEvidence` and run `checkTransfer` or `checkMaxTransfer`.
+ *
+ * @param page - Playwright `Page` instance
+ * @param adapter - The `AppAdapter` configured for the application under test
+ * @param opts - Scenario options: IDs, mint info, addresses, amount, and snapshot reader
+ * @param expectedRawAmount - The independently computed expected raw base units to transfer
+ * @returns Object containing the `Verdict` and full `TestEvidence` bundle
  */
 export async function runScenario(
   page: import("@playwright/test").Page,

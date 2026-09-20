@@ -44,15 +44,22 @@ export interface SyntheticMintConfig {
 
 /**
  * Compute a SHA-256 hash of raw mint account data bytes.
- * Used to prove the mint was NOT written during a time-activation test.
+ *
+ * Used to prove the mint account was NOT written during a time-activation test —
+ * the hash before and after a time-travel operation must be identical.
+ *
+ * @param data - Raw bytes of the on-chain mint account
+ * @returns Lowercase hex SHA-256 digest string
  */
 export function hashMintBytes(data: Uint8Array): string {
   return createHash("sha256").update(data).digest("hex");
 }
 
 /**
- * Load a pre-existing synthetic mint config from fixtures/synthetic/mint.json.
- * Returns null if the fixture does not exist yet.
+ * Load a pre-existing synthetic mint config from a JSON fixture file.
+ *
+ * @param fixturePath - Absolute path to the `mint.json` fixture file
+ * @returns Parsed `SyntheticMintConfig` if the file exists and is valid JSON, otherwise `null`
  */
 export function loadSyntheticMintConfig(
   fixturePath: string
@@ -65,7 +72,12 @@ export function loadSyntheticMintConfig(
   }
 }
 
-/** Save the synthetic mint config to fixtures/synthetic/mint.json */
+/**
+ * Persist a synthetic mint config to a JSON fixture file.
+ *
+ * @param fixturePath - Absolute path to write the `mint.json` fixture
+ * @param config - The `SyntheticMintConfig` to serialize
+ */
 export function saveSyntheticMintConfig(
   fixturePath: string,
   config: SyntheticMintConfig
@@ -74,8 +86,17 @@ export function saveSyntheticMintConfig(
 }
 
 /**
- * Mint synthetic Token-2022 ScaledUiAmount tokens directly to any recipient wallet.
- * Creates the recipient ATA idempotently if it does not already exist.
+ * Mint synthetic Token-2022 ScaledUiAmount tokens to a recipient wallet.
+ *
+ * Creates the recipient's Associated Token Account (ATA) idempotently if it does
+ * not already exist, then mints `rawAmount` base units into it.
+ * Reads the mint address and mint-authority keypair from the fixture directory.
+ *
+ * @param recipientOwnerAddress - Base58 public key of the recipient wallet
+ * @param rawAmount - Number of raw base units to mint (BigInt)
+ * @param fixtureDir - Optional path to the fixture directory; defaults to `fixtures/synthetic/`
+ * @param rpcUrl - RPC URL of the Solana node (defaults to Surfpool at `127.0.0.1:8899`)
+ * @returns The transaction signature of the mint-to transaction
  */
 export async function mintTokensTo(
   recipientOwnerAddress: string,

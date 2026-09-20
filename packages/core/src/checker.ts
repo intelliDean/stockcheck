@@ -26,8 +26,12 @@ export interface CheckResult {
 /**
  * Run all checks for a standard (non-Max) transfer.
  *
- * Rules (§8C of the brief):
- *   senderDebit = recipientCredit = executedAmount = expectedRawAmount
+ * Independently verifies two §8C invariants:
+ * 1. `senderDebit === recipientCredit` — no unexpected fee was deducted.
+ * 2. `senderDebit === expectedRawAmount` — on-chain movement matches what the user approved.
+ *
+ * @param evidence - Fully populated `TestEvidence` bundle (pre- and post-transfer snapshots + review capture)
+ * @returns `Verdict` with `status: "PASS"` or `status: "FAIL"` and a failure code
  */
 export function checkTransfer(evidence: TestEvidence): Verdict {
   const { observedSenderDebit, observedRecipientCredit, expectedRawAmount } =
@@ -63,9 +67,14 @@ export function checkTransfer(evidence: TestEvidence): Verdict {
 /**
  * Run checks for a Max transfer (§8D of the brief).
  *
- * Rules:
- *   - The transferred amount = source account's full raw balance before transfer
- *   - Source account's remaining raw balance = 0
+ * Independently verifies three invariants:
+ * 1. The transferred amount equals the source account's full raw balance before transfer.
+ * 2. The source account's remaining raw balance is exactly 0.
+ * 3. `senderDebit === recipientCredit` — no unexpected fee.
+ *
+ * @param evidence - Fully populated `TestEvidence` bundle. `sourceBefore.rawBalance` is
+ *                   used as the expected full-balance amount.
+ * @returns `Verdict` with `status: "PASS"` or `status: "FAIL"` and a failure code
  */
 export function checkMaxTransfer(evidence: TestEvidence): Verdict {
   const {
@@ -110,6 +119,13 @@ export function checkMaxTransfer(evidence: TestEvidence): Verdict {
 // Internal helpers
 // ──────────────────────────────────────────────────────────
 
+/**
+ * Build a FAIL verdict with a structured reason code.
+ *
+ * @param code - Machine-readable failure code
+ * @param details - Human-readable lines describing the mismatch
+ * @returns A `Verdict` with `status: "FAIL"`
+ */
 function fail(code: FailureCode, details: string[]): Verdict {
   return {
     status: "FAIL",
