@@ -83,7 +83,11 @@ const BASE58_ALPHABET =
   "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
 
 function toBase58(bytes: Uint8Array): string {
-  let num = BigInt("0x" + Buffer.from(bytes).toString("hex"));
+  let hex = "";
+  for (const b of bytes) {
+    hex += b.toString(16).padStart(2, "0");
+  }
+  let num = BigInt("0x" + (hex || "0"));
   const result: string[] = [];
 
   while (num > 0n) {
