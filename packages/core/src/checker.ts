@@ -1,70 +1,21 @@
 /**
- * @stockcheck/core — checker engine
+ * @stockcheck/core — Transfer verification engine
  *
- * The checker observes the application's transaction and independently
- * computes the expected raw amount. It does NOT dictate what the application
- * should transfer — that decision is always the application's.
+ * Observes the application's transaction and independently evaluates whether the
+ * actual on-chain token movement conforms to user approvals and Token-2022 rules.
  */
 
 import type {
   TestEvidence,
   Verdict,
   FailureCode,
-  RawBaseUnits,
-  MintState,
 } from "./types.js";
+import { serializeBigInt } from "./bigint.js";
 
-// ──────────────────────────────────────────────────────────
-// BigInt arithmetic helpers
-// ──────────────────────────────────────────────────────────
-
-/**
- * Safe: convert decimal string → BigInt.
- * Throws on non-integer / empty / NaN input so callers see explicit errors.
- */
-export function parseBigInt(value: string): RawBaseUnits {
-  const trimmed = value.trim();
-  if (!/^\d+$/.test(trimmed)) {
-    throw new Error(
-      `parseBigInt: "${value}" is not a non-negative decimal integer string`
-    );
-  }
-  return BigInt(trimmed);
-}
-
-/** Serialize BigInt to decimal string for JSON reports (never loses precision). */
-export function serializeBigInt(value: bigint): string {
-  return value.toString(10);
-}
-
-// ──────────────────────────────────────────────────────────
-// Effective-multiplier resolution
-// ──────────────────────────────────────────────────────────
-
-/**
- * Resolve the effective multiplier from mint state and the current clock time.
- * This mirrors Token-2022's reference implementation: if the chain clock has
- * passed new_multiplier_effective_timestamp, the new multiplier is active.
- *
- * @param mint - Current mint state
- * @param clockTimestampSeconds - Current unix timestamp from Solana Clock sysvar (seconds)
- */
-export function resolveEffectiveMultiplier(
-  mint: MintState,
-  clockTimestampSeconds: bigint
-): number {
-  if (
-    mint.newMultiplierEffectiveTimestamp > 0n &&
-    clockTimestampSeconds >= mint.newMultiplierEffectiveTimestamp
-  ) {
-    return mint.newMultiplier;
-  }
-  return mint.currentMultiplier;
-}
-
-// ──────────────────────────────────────────────────────────
-// Core verdict engine
-// ──────────────────────────────────────────────────────────
+// Re-export submodules for full backward compatibility
+export { parseBigInt, serializeBigInt } from "./bigint.js";
+export { resolveEffectiveMultiplier } from "./multiplier.js";
+export { formatReport } from "./report.js";
 
 export interface CheckResult {
   verdict: Verdict;
@@ -153,49 +104,6 @@ export function checkMaxTransfer(evidence: TestEvidence): Verdict {
     status: "PASS",
     summary: `Max transfer matched: ${serializeBigInt(expectedRaw)} raw base units, source residual = 0`,
   };
-}
-
-// ──────────────────────────────────────────────────────────
-// Report formatting
-// ──────────────────────────────────────────────────────────
-
-/**
- * Format a structured text report for a test result.
- * Format follows §11 of the project brief exactly.
- */
-export function formatReport(verdict: Verdict, evidence: TestEvidence): string {
-  const lines: string[] = [];
-
-  lines.push(
-    verdict.status === "PASS"
-      ? `PASS — ${evidence.scenarioId}: ${evidence.scenarioDescription}`
-      : verdict.status === "FAIL"
-      ? `FAIL — ${verdict.failureCode}`
-      : `${verdict.status} — ${evidence.scenarioId}`
-  );
-  lines.push("");
-  lines.push(`Scenario: ${evidence.scenarioDescription}`);
-  lines.push(
-    `Approved quantity: ${evidence.capturedReview.displayedAmount} ${evidence.capturedReview.displayedUnit}`
-  );
-  lines.push("");
-  lines.push(
-    `Expected raw movement: ${serializeBigInt(evidence.expectedRawAmount)}`
-  );
-  lines.push(
-    `Observed sender debit: ${serializeBigInt(evidence.observedSenderDebit)}`
-  );
-  lines.push(
-    `Observed recipient credit: ${serializeBigInt(evidence.observedRecipientCredit)}`
-  );
-  lines.push(`Observed scaled equivalent: ${evidence.observedScaledEquivalent}`);
-  lines.push("");
-  lines.push(`Transaction: ${evidence.transactionSignature}`);
-  lines.push(`Fixture: ${evidence.fixtureIdentity}`);
-  lines.push(`Runtime: ${evidence.runtimeIdentity}`);
-  lines.push(`Evaluated at: ${evidence.evaluatedAt}`);
-
-  return lines.join("\n");
 }
 
 // ──────────────────────────────────────────────────────────
