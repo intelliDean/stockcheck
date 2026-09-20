@@ -255,7 +255,7 @@ export default function App() {
           </label>
           <input
             id="recipient-input"
-            className="input-field mono"
+            className="field-input input-field mono"
             data-testid="recipient-field"
             type="text"
             placeholder="Enter recipient address..."
@@ -270,10 +270,10 @@ export default function App() {
           <label className="field-label" htmlFor="amount-input">
             Amount
           </label>
-          <div className="input-row">
+          <div className="amount-wrapper input-row">
             <input
               id="amount-input"
-              className="input-field mono"
+              className="field-input input-field mono"
               data-testid="amount-field"
               type="text"
               placeholder="0.000000"
@@ -294,7 +294,7 @@ export default function App() {
               MAX
             </button>
           </div>
-          <div className="amount-hint">
+          <div className="unit-convention amount-hint">
             Input: {convention} units ({convention === "unscaled" ? "unscaled" : `multiplier × ${effectiveMultiplier}`})
           </div>
         </div>
