@@ -19,7 +19,7 @@ export default defineConfig({
   projects: [
     {
       name: "stockcheck-e2e",
-      use: { ...devices["Desktop Chrome"], channel: "chrome" },
+      use: { ...devices["Desktop Chrome"] },
     },
   ],
   // Start reference app before tests, stop after

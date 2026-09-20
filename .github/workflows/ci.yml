@@ -61,7 +61,7 @@ jobs:
         run: pnpm -r run build
 
       - name: Install Playwright browsers
-        run: pnpm exec playwright install --with-deps chrome
+        run: pnpm exec playwright install --with-deps chromium
 
       - name: Install Surfpool CLI
         run: |
@@ -70,7 +70,7 @@ jobs:
 
       - name: Start Surfpool
         run: |
-          $HOME/.local/bin/surfpool start --detach --offline --no-tui --no-studio
+          $HOME/.local/bin/surfpool start --ci --daemon --offline
           for i in {1..30}; do
             if curl -s -X POST http://127.0.0.1:8899 -H "Content-Type: application/json" -d '{"jsonrpc":"2.0","id":1,"method":"getHealth"}' | grep -q 'ok'; then
               echo "Surfpool is healthy!"
