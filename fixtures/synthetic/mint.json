@@ -1,11 +1,11 @@
 {
-  "mintAddress": "6A6FKV5f5JA7iGBCK5hpkiMAp3H5QGMPT6yWWHKaxbTR",
+  "mintAddress": "4hkNyXWxVmZdHHScEKrG3eNaDZ43hsSD762mFuv5CFo1",
   "tokenProgram": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
   "decimals": 6,
   "initialMultiplier": 1,
-  "authorityAddress": "6eTbbTq7qDQ6MPYYhNMHqbpdrKUra5WW6zHSEioLC28F",
-  "mintBytesHashAtCreation": "0f60fd0e9298bb883f2ad2a44f5a1922167b010bd2c309d6a591aa039379285e",
-  "createdAt": "2026-09-20T15:40:57.428Z",
+  "authorityAddress": "6iN5FZArgTqN5UhoYFGCeBuzwmrV27TPc77qADJhVNAq",
+  "mintBytesHashAtCreation": "1df7c549fef59838d47f6a51807257206f3fa447bf1901a49e8ae7c1cac25684",
+  "createdAt": "2026-09-20T16:08:14.621Z",
   "rpcUrl": "http://127.0.0.1:8899",
   "note": "Synthetic token — LOCAL TEST ENVIRONMENT ONLY. Not real money."
 }
