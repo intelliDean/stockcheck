@@ -2,117 +2,130 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>StockCheck — Conclusion</title>
+  <title>StockCheck — Hackathon Submission Conclusion</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap');
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      width: 1440px;
-      height: 900px;
-      background: radial-gradient(circle at 50% 80%, #161b26 0%, #0a0c10 100%);
+      width: 1920px;
+      height: 1080px;
+      background: radial-gradient(circle at 50% 80%, #151a28 0%, #07090e 100%);
       color: #f0f6fc;
       font-family: 'Inter', sans-serif;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 60px;
+      padding: 80px;
       overflow: hidden;
       text-align: center;
     }
     .badge {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      background: rgba(20, 241, 149, 0.15);
+      gap: 10px;
+      background: rgba(20, 241, 149, 0.12);
       border: 1px solid rgba(20, 241, 149, 0.4);
       color: #14f195;
-      padding: 8px 20px;
+      padding: 8px 24px;
       border-radius: 9999px;
       font-size: 15px;
       font-weight: 700;
-      margin-bottom: 28px;
-      letter-spacing: 0.5px;
+      margin-bottom: 32px;
+      letter-spacing: 0.8px;
     }
     h1 {
-      font-size: 56px;
-      font-weight: 800;
-      letter-spacing: -1.5px;
+      font-size: 72px;
+      font-weight: 900;
+      letter-spacing: -2px;
       margin-bottom: 20px;
       background: linear-gradient(135deg, #ffffff 40%, #14f195 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
     p {
-      font-size: 20px;
+      font-size: 24px;
       color: #94a3b8;
-      max-width: 750px;
+      max-width: 950px;
       line-height: 1.6;
-      margin-bottom: 48px;
+      margin-bottom: 56px;
     }
     .stats {
       display: flex;
-      gap: 40px;
-      margin-bottom: 48px;
+      gap: 36px;
+      margin-bottom: 56px;
     }
     .stat-box {
-      background: rgba(22, 27, 34, 0.6);
+      background: rgba(22, 27, 36, 0.7);
       border: 1px solid rgba(255, 255, 255, 0.08);
       border-radius: 16px;
       padding: 24px 36px;
-      backdrop-filter: blur(12px);
+      min-width: 220px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
     }
-    .stat-number {
-      font-size: 36px;
+    .stat-val {
+      font-size: 44px;
       font-weight: 800;
       color: #14f195;
       font-family: 'JetBrains Mono', monospace;
-      margin-bottom: 4px;
+      margin-bottom: 6px;
     }
-    .stat-label {
+    .stat-lbl {
       font-size: 13px;
       color: #8b949e;
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      font-weight: 600;
     }
-    .cta {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 15px;
-      color: #c084fc;
-      background: rgba(153, 69, 255, 0.1);
-      border: 1px solid rgba(153, 69, 255, 0.3);
-      padding: 12px 28px;
+    .repo-box {
+      background: rgba(15, 19, 28, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.1);
       border-radius: 12px;
+      padding: 16px 32px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 17px;
+      color: #58a6ff;
+      display: flex;
+      align-items: center;
+      gap: 16px;
     }
   </style>
 </head>
 <body>
   <div class="badge">
-    ✓ Fully Verified on Local Solana Testnet
+    ✓ Verification Suite Complete • Ready For Integration
   </div>
-  <h1>Making Token-2022 Safe for Every Wallet</h1>
+
+  <h1>Securing Solana Token-2022 Transfers</h1>
+
   <p>
-    StockCheck provides developers with the first rigorous, automated regression harness for Token-2022 <code>ScaledUiAmount</code> tokens. Zero math discrepancies. Zero unspent dust. Pure verifiable precision.
+    StockCheck provides turnkey, zero-intrusion CI/CD regression protection for wallets, DeFi protocols, and token bridges handling <strong>ScaledUiAmount</strong> assets.
   </p>
 
   <div class="stats">
     <div class="stat-box">
-      <div class="stat-number">19 / 19</div>
-      <div class="stat-label">Core Unit Tests Passed</div>
+      <div class="stat-val">19 / 19</div>
+      <div class="stat-lbl">Core Unit Tests Passing</div>
     </div>
     <div class="stat-box">
-      <div class="stat-number">5 / 5</div>
-      <div class="stat-label">On-Chain Scenarios Verified</div>
+      <div class="stat-val">100%</div>
+      <div class="stat-lbl">On-Chain E2E Pass Rate</div>
     </div>
     <div class="stat-box">
-      <div class="stat-number">2 / 2</div>
-      <div class="stat-label">Seeded Defects Trapped</div>
+      <div class="stat-val">2 / 2</div>
+      <div class="stat-lbl">Seeded Defects Trapped</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-val">0</div>
+      <div class="stat-lbl">Residual Dust Tolerated</div>
     </div>
   </div>
 
-  <div class="cta">
-    pnpm demo • github.com/stockcheck/stockcheck • MIT Licensed
+  <div class="repo-box">
+    <span>Colosseum Hackathon 2026</span>
+    <span style="color: #6e7681;">|</span>
+    <span>Solana Track Submission</span>
+    <span style="color: #6e7681;">|</span>
+    <span style="color: #14f195;">pnpm demo</span>
   </div>
 </body>
 </html>

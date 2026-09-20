@@ -2,108 +2,112 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>StockCheck — Intro</title>
+  <title>StockCheck — Introduction</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap');
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      width: 1440px;
-      height: 900px;
-      background: radial-gradient(circle at 50% 20%, #161b26 0%, #0a0c10 100%);
+      width: 1920px;
+      height: 1080px;
+      background: radial-gradient(circle at 50% 20%, #151a28 0%, #07090e 100%);
       color: #f0f6fc;
       font-family: 'Inter', sans-serif;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 60px;
+      padding: 80px;
       overflow: hidden;
     }
     .badge {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      background: rgba(153, 69, 255, 0.15);
+      gap: 10px;
+      background: rgba(153, 69, 255, 0.12);
       border: 1px solid rgba(153, 69, 255, 0.4);
       color: #c084fc;
-      padding: 6px 16px;
+      padding: 8px 24px;
       border-radius: 9999px;
-      font-size: 14px;
-      font-weight: 600;
-      letter-spacing: 0.5px;
-      margin-bottom: 24px;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      margin-bottom: 28px;
       text-transform: uppercase;
     }
     .badge-dot {
-      width: 8px;
-      height: 8px;
+      width: 10px;
+      height: 10px;
       background: #14f195;
       border-radius: 50%;
-      box-shadow: 0 0 10px #14f195;
+      box-shadow: 0 0 12px #14f195;
     }
     h1 {
-      font-size: 64px;
-      font-weight: 800;
-      letter-spacing: -1.5px;
-      background: linear-gradient(135deg, #ffffff 30%, #9945ff 70%, #14f195 100%);
+      font-size: 80px;
+      font-weight: 900;
+      letter-spacing: -2px;
+      background: linear-gradient(135deg, #ffffff 30%, #a855f7 70%, #14f195 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
-      margin-bottom: 16px;
+      margin-bottom: 20px;
       text-align: center;
     }
     .subtitle {
-      font-size: 22px;
+      font-size: 26px;
       color: #94a3b8;
-      max-width: 800px;
+      max-width: 1100px;
       text-align: center;
       line-height: 1.5;
-      margin-bottom: 48px;
+      margin-bottom: 60px;
+      font-weight: 400;
     }
-    .cards-grid {
+    .subtitle strong {
+      color: #ffffff;
+      font-weight: 700;
+    }
+    .grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 24px;
-      max-width: 1100px;
+      gap: 32px;
+      max-width: 1320px;
       width: 100%;
     }
     .card {
-      background: rgba(22, 27, 34, 0.7);
+      background: rgba(22, 27, 38, 0.6);
       border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 16px;
-      padding: 24px;
-      box-shadow: 0 12px 30px rgba(0,0,0,0.3);
-      backdrop-filter: blur(12px);
+      border-radius: 18px;
+      padding: 32px 28px;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 12px 32px rgba(0,0,0,0.4);
+      transition: transform 0.3s ease;
     }
     .card-icon {
-      font-size: 28px;
-      margin-bottom: 12px;
+      font-size: 32px;
+      margin-bottom: 16px;
+      display: inline-block;
     }
     .card-title {
-      font-size: 17px;
+      font-size: 20px;
       font-weight: 700;
       color: #ffffff;
-      margin-bottom: 8px;
+      margin-bottom: 12px;
     }
     .card-desc {
-      font-size: 13px;
+      font-size: 15px;
       color: #8b949e;
-      line-height: 1.5;
+      line-height: 1.6;
     }
     .footer {
-      margin-top: 48px;
-      display: flex;
-      gap: 24px;
-      font-size: 13px;
-      color: #64748b;
-      font-family: 'JetBrains Mono', monospace;
-    }
-    .footer span {
+      margin-top: 56px;
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 32px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px;
+      color: #6e7681;
     }
-    .highlight {
+    .footer span {
       color: #14f195;
+      font-weight: 600;
     }
   </style>
 </head>
@@ -112,35 +116,45 @@
     <span class="badge-dot"></span>
     Colosseum Hackathon • Solana Track 2026
   </div>
+
   <h1>StockCheck</h1>
+
   <div class="subtitle">
-    The Open-Source Regression Testing Framework for Solana <strong>Token-2022 ScaledUiAmount</strong> Multipliers & Wallet Transfer Precision.
+    The Automated Regression Testing Framework for Solana <strong>Token-2022 ScaledUiAmount</strong> Multipliers & Wallet Transfer Precision.
   </div>
 
-  <div class="cards-grid">
+  <div class="grid">
     <div class="card">
       <div class="card-icon">⚡</div>
-      <div class="card-title">The Token-2022 Problem</div>
-      <div class="card-desc">ScaledUiAmount allows mints to scale user balances over time (stock splits, yield). Traditional wallets retain stale multipliers or round float numbers, corrupting raw transfer amounts.</div>
+      <div class="card-title">The Token-2022 Multiplier Trap</div>
+      <div class="card-desc">
+        Tokens can dynamically scale balances via on-chain multipliers. Wallets that cache stale multipliers or use lossy float math debit double or leave residual dust.
+      </div>
     </div>
+
     <div class="card">
       <div class="card-icon">🔬</div>
-      <div class="card-title">Independent Auditor</div>
-      <div class="card-desc">StockCheck never alters wallet code. It observes what the user sees in the UI and independently verifies on-chain delta movements on a local Solana validator.</div>
+      <div class="card-title">Zero-Intrusion Auditor</div>
+      <div class="card-desc">
+        StockCheck never patches wallet code. It observes what the user sees in the UI and independently verifies on-chain delta movements against genuine local testnet validators.
+      </div>
     </div>
+
     <div class="card">
       <div class="card-icon">🛡️</div>
-      <div class="card-title">Zero Math Regressions</div>
-      <div class="card-desc">Coordinates chain time-travel with virtual browser timers, catching multiplier retention, precision loss, and residual dust before mainnet deployment.</div>
+      <div class="card-title">Automated Defect Trapping</div>
+      <div class="card-desc">
+        Time-travel clock sweeps, scheduled activation cross-checks, and precision boundary assertions prevent devastating real-money user loss before deployment.
+      </div>
     </div>
   </div>
 
   <div class="footer">
-    <span>Cluster: <strong class="highlight">Surfpool Local Testnet</strong></span>
-    <span>•</span>
-    <span>Synthetic Mint: <strong class="highlight">xSTOCK (6 Decimals)</strong></span>
-    <span>•</span>
-    <span>Framework: <strong class="highlight">Playwright + @solana/kit</strong></span>
+    <div>Validator: <span>Surfpool Local Testnet (8899)</span></div>
+    <div>•</div>
+    <div>Token Extension: <span>ScaledUiAmountConfig</span></div>
+    <div>•</div>
+    <div>Engine: <span>Playwright + @solana/kit</span></div>
   </div>
 </body>
 </html>
