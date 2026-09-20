@@ -31,6 +31,5 @@ demo/
 # OS
 .DS_Store
 Thumbs.db
-
-
+# Local notes
 stock_check.txt

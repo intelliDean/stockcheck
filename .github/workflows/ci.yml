@@ -13,16 +13,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "22"
           cache: "pnpm"
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -44,33 +44,45 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "22"
           cache: "pnpm"
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
-
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Build packages
+        run: pnpm -r run build
+
       - name: Install Playwright browsers
-        run: pnpm exec playwright install --with-deps chromium
+        run: pnpm exec playwright install --with-deps chrome
 
       - name: Install Surfpool CLI
-        run: curl -sL https://run.surfpool.run/ | bash
-        env:
-          SURFPOOL_OFFLINE: "true"
+        run: |
+          curl -sL https://run.surfpool.run/ | bash
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
 
       - name: Start Surfpool
-        run: surfpool start --detach --offline
+        run: |
+          $HOME/.local/bin/surfpool start --detach --offline --no-tui --no-studio
+          for i in {1..30}; do
+            if curl -s -X POST http://127.0.0.1:8899 -H "Content-Type: application/json" -d '{"jsonrpc":"2.0","id":1,"method":"getHealth"}' | grep -q 'ok'; then
+              echo "Surfpool is healthy!"
+              break
+            fi
+            echo "Waiting for Surfpool RPC..."
+            sleep 1
+          done
 
       - name: Create synthetic mint
-        run: node --input-type=module scripts/create-mint.js
+        run: node scripts/create-mint.mjs
 
       - name: Run required E2E suite
         run: pnpm test:e2e
