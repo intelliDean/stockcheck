@@ -2,5 +2,15 @@
   "name": "@stockcheck/tests-specimens",
   "version": "0.1.0",
   "type": "module",
-  "private": true
+  "private": true,
+  "dependencies": {
+    "@stockcheck/adapter-reference": "workspace:*",
+    "@stockcheck/core": "workspace:*",
+    "@stockcheck/playwright": "workspace:*",
+    "@stockcheck/runtime": "workspace:*"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.47.0",
+    "typescript": "^5.6.0"
+  }
 }

@@ -11,6 +11,12 @@ importers:
       '@playwright/test':
         specifier: ^1.47.0
         version: 1.63.0
+      '@solana-program/token-2022':
+        specifier: ^0.4.0
+        version: 0.4.2(@solana/kit@2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(ws@8.21.3))(@solana/sysvars@2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3))
+      '@solana/kit':
+        specifier: ^2.1.0
+        version: 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(ws@8.21.3)
       '@types/node':
         specifier: ^22.0.0
         version: 22.20.4
@@ -153,7 +159,27 @@ importers:
         specifier: ^5.6.0
         version: 5.9.3
 
-  tests/specimens: {}
+  tests/specimens:
+    dependencies:
+      '@stockcheck/adapter-reference':
+        specifier: workspace:*
+        version: link:../../adapters/reference
+      '@stockcheck/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@stockcheck/playwright':
+        specifier: workspace:*
+        version: link:../../packages/playwright
+      '@stockcheck/runtime':
+        specifier: workspace:*
+        version: link:../../packages/runtime
+    devDependencies:
+      '@playwright/test':
+        specifier: ^1.47.0
+        version: 1.63.0
+      typescript:
+        specifier: ^5.6.0
+        version: 5.9.3
 
   tests/unit:
     dependencies:
