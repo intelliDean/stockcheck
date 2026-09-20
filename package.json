@@ -3,7 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "dev": "pnpm --filter reference dev",
     "demo": "node ./scripts/demo.mjs",
+    "wallet": "node ./scripts/demo-wallet.mjs",
     "test": "pnpm test:unit && pnpm test:e2e && pnpm test:specimens",
     "test:unit": "pnpm --filter @stockcheck/core-unit-tests test:unit",
     "test:e2e": "node ./node_modules/@playwright/test/cli.js test --config playwright.config.ts",

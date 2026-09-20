@@ -36,12 +36,13 @@ export default function App() {
   const mode = getAppMode();
   const convention = getAppConvention();
 
-  // Test wallet injected by Playwright fixture
-  const testWallet: TestWallet | null =
-    typeof window !== "undefined" &&
-    (window as unknown as { __TEST_WALLET__?: TestWallet }).__TEST_WALLET__
+  // Test wallet state (supports both pre-load injection and DevTools console pasting)
+  const [activeWallet, setActiveWallet] = useState<TestWallet | null>(() => {
+    return typeof window !== "undefined" &&
+      (window as unknown as { __TEST_WALLET__?: TestWallet }).__TEST_WALLET__
       ? (window as unknown as { __TEST_WALLET__: TestWallet }).__TEST_WALLET__
       : null;
+  });
 
   // App State
   const [connected, setConnected] = useState(false);
@@ -90,13 +91,22 @@ export default function App() {
     syncMint();
   }, [mint.address]);
 
-  // Auto-connect test wallet if injected
+  // Auto-connect test wallet if injected or pasted into console
   useEffect(() => {
-    if (testWallet && !connected) {
-      setConnected(true);
-      setWalletAddress(testWallet.publicKey);
+    function checkWallet() {
+      const injected = typeof window !== "undefined"
+        ? (window as unknown as { __TEST_WALLET__?: TestWallet }).__TEST_WALLET__
+        : null;
+      if (injected && (!connected || walletAddress !== injected.publicKey)) {
+        setActiveWallet(injected);
+        setConnected(true);
+        setWalletAddress(injected.publicKey);
+      }
     }
-  }, [testWallet, connected]);
+    checkWallet();
+    const interval = setInterval(checkWallet, 300);
+    return () => clearInterval(interval);
+  }, [connected, walletAddress]);
 
   // Load raw balance when connected
   useEffect(() => {
@@ -190,15 +200,15 @@ export default function App() {
 
   // Confirm transfer handler
   const handleConfirm = useCallback(async () => {
-    if (!review || !testWallet) return;
+    if (!review || !activeWallet) return;
 
     setTxStatus("pending");
     setTxError(null);
 
     try {
       const sig = await executeTokenTransfer({
-        walletSecretKey: testWallet.secretKey,
-        walletPublicKey: testWallet.publicKey,
+        walletSecretKey: activeWallet.secretKey,
+        walletPublicKey: activeWallet.publicKey,
         recipientAddress: review.recipient,
         mintAddress: mint.address,
         decimals: mint.decimals,
@@ -209,13 +219,13 @@ export default function App() {
       setTxStatus("confirmed");
 
       // Refresh on-chain balance
-      const updatedBal = await getSourceTokenBalance(testWallet.publicKey, mint.address);
+      const updatedBal = await getSourceTokenBalance(activeWallet.publicKey, mint.address);
       setRawBalance(updatedBal);
     } catch (err: unknown) {
       setTxStatus("error");
       setTxError(err instanceof Error ? err.message : String(err));
     }
-  }, [review, testWallet, mint.address, mint.decimals]);
+  }, [review, activeWallet, mint.address, mint.decimals]);
 
   // Reset transfer form
   const handleStartNewTransfer = useCallback(() => {
