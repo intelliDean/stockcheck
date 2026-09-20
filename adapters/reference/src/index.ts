@@ -18,7 +18,7 @@ import { REFERENCE_SELECTORS } from "./selectors.js";
 
 export { REFERENCE_SELECTORS } from "./selectors.js";
 
-export const REFERENCE_APP_BASE_URL = "http://localhost:5173";
+export const REFERENCE_APP_BASE_URL = "http://127.0.0.1:5173";
 
 // ---------------------------------------------------------------------------
 // Helpers

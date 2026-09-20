@@ -80,7 +80,7 @@ faultyTest(
     const expectedRaw = 1_000_000n;
 
     // Navigate to faulty mode
-    await page.goto("http://localhost:5173?mode=ignore-activation");
+    await page.goto("http://127.0.0.1:5173?mode=ignore-activation");
 
     const { verdict, evidence } = await runScenario(
       page,
@@ -133,7 +133,7 @@ faultyTest(
     const mintState = loadMintState();
 
     // Navigate to max-roundtrip faulty mode
-    await page.goto("http://localhost:5173?mode=max-roundtrip");
+    await page.goto("http://127.0.0.1:5173?mode=max-roundtrip");
 
     const { verdict, evidence } = await runScenario(
       page,

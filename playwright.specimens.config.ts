@@ -21,7 +21,7 @@ export default defineConfig({
     ["list"],
   ],
   use: {
-    baseURL: "http://localhost:5173",
+    baseURL: "http://127.0.0.1:5173",
     headless: true,
     trace: "on",
     screenshot: "on",
@@ -34,8 +34,9 @@ export default defineConfig({
   ],
   webServer: {
     command: "pnpm --filter reference dev",
-    url: "http://localhost:5173",
+    url: "http://127.0.0.1:5173",
     reuseExistingServer: !process.env["CI"],
+    timeout: 60_000,
   },
   forbidOnly: !!process.env["CI"],
 });

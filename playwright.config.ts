@@ -11,7 +11,7 @@ export default defineConfig({
     ["list"],
   ],
   use: {
-    baseURL: "http://localhost:5173",
+    baseURL: "http://127.0.0.1:5173",
     headless: true,
     trace: "on", // always capture traces for evidence
     screenshot: "on",
@@ -25,9 +25,9 @@ export default defineConfig({
   // Start reference app before tests, stop after
   webServer: {
     command: "pnpm --filter reference dev",
-    url: "http://localhost:5173",
+    url: "http://127.0.0.1:5173",
     reuseExistingServer: !process.env["CI"],
-    timeout: 30_000,
+    timeout: 60_000,
   },
   // Required suite must fail if assertions fail
   // Specimen tests are isolated (see playwright.specimens.config.ts)
