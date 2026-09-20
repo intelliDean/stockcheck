@@ -2,6 +2,7 @@
 
 [![Solana Token-2022](https://img.shields.io/badge/Solana-Token--2022-14F195?logo=solana&logoColor=white)](https://spl.solana.com/token-2022)
 [![Colosseum Hackathon](https://img.shields.io/badge/Colosseum-Crypto%20World's%20Fair-blueviolet)](https://www.colosseum.org/)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Vercel-black?logo=vercel)](https://stockcheck-reference.vercel.app/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![CI](https://github.com/intelliDean/stockcheck/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/intelliDean/stockcheck/actions/workflows/ci.yml)
 
