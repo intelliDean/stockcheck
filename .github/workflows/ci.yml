@@ -70,21 +70,34 @@ jobs:
 
       - name: Start Surfpool
         run: |
-          $HOME/.local/bin/surfpool start --ci --daemon --offline
-          for i in {1..30}; do
-            if curl -s -X POST http://127.0.0.1:8899 -H "Content-Type: application/json" -d '{"jsonrpc":"2.0","id":1,"method":"getHealth"}' | grep -q 'ok'; then
-              echo "Surfpool is healthy!"
+          # Start Surfpool in foreground-as-background so we can tee its output
+          $HOME/.local/bin/surfpool start --offline 2>&1 | tee surfpool-startup.log &
+          SURFPOOL_PID=$!
+          for i in {1..60}; do
+            HEALTH=$(curl -s -X POST http://127.0.0.1:8899 -H "Content-Type: application/json" -d '{"jsonrpc":"2.0","id":1,"method":"getHealth"}' 2>/dev/null || echo '')
+            if echo "$HEALTH" | grep -q 'ok'; then
+              echo "Surfpool is healthy after ${i}s"
               break
             fi
-            echo "Waiting for Surfpool RPC..."
+            echo "Waiting for Surfpool RPC (attempt $i)..."
             sleep 1
           done
+          # Additional 2s grace period for Surfpool to finish internal init
+          sleep 2
+          # Confirm getSlot works (proves ledger is ready, not just HTTP)
+          SLOT=$(curl -s -X POST http://127.0.0.1:8899 -H "Content-Type: application/json" -d '{"jsonrpc":"2.0","id":1,"method":"getSlot"}' 2>/dev/null)
+          echo "Current slot: $SLOT"
+          if ! echo "$SLOT" | grep -q 'result'; then
+            echo "ERROR: Surfpool RPC not ready — getSlot failed"
+            cat surfpool-startup.log || true
+            exit 1
+          fi
 
       - name: Create synthetic mint
         run: node scripts/create-mint.mjs
 
       - name: Run required E2E suite
-        run: pnpm test:e2e
+        run: node ./node_modules/@playwright/test/cli.js test --config playwright.config.ts --retries 1
         env:
           CI: "true"
 
@@ -101,4 +114,5 @@ jobs:
           path: |
             playwright-report/
             playwright-report-specimens/
+            surfpool-startup.log
           retention-days: 30
