@@ -3,7 +3,7 @@
 [![Solana Token-2022](https://img.shields.io/badge/Solana-Token--2022-14F195?logo=solana&logoColor=white)](https://spl.solana.com/token-2022)
 [![Colosseum Hackathon](https://img.shields.io/badge/Colosseum-Crypto%20World's%20Fair-blueviolet)](https://www.colosseum.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tests Passing](https://img.shields.io/badge/Tests-100%25%20Passing-brightgreen)]()
+[![CI](https://github.com/intelliDean/stockcheck/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/intelliDean/stockcheck/actions/workflows/ci.yml)
 
 > **The Automated Regression-Testing Framework for Solana Token-2022 `ScaledUiAmount` Multipliers and Wallet Transfer Precision.**
 
