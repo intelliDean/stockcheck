@@ -12,6 +12,7 @@
     "report:specimens": "node ./node_modules/@playwright/test/cli.js show-report playwright-report-specimens"
   },
   "devDependencies": {
+    "@playwright/test": "^1.47.0",
     "@types/node": "^22.0.0",
     "typescript": "^5.6.0"
   },
