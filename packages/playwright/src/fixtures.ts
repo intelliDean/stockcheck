@@ -4,7 +4,7 @@
  * Provides:
  *   - stockcheck fixture: sets up the Surfpool runtime, test wallets,
  *     and the AppAdapter for each test
- *   - Helper functions for reading on-chain state
+ *   - Helper functions for reading on-chain state and running test scenarios
  */
 
 import { test as base, expect } from "@playwright/test";
@@ -15,7 +15,6 @@ import {
 } from "@stockcheck/test-wallet";
 import {
   isSurfpoolRunning,
-  getClockTimestampSeconds,
   airdropSol,
   mintTokensTo,
   readAccountSnapshot as runtimeReadAccountSnapshot,
@@ -25,14 +24,13 @@ import type {
   MintState,
   TestEvidence,
   Verdict,
-  VerdictStatus,
 } from "@stockcheck/core";
 import {
   checkTransfer,
   checkMaxTransfer,
-  formatReport,
-  parseBigInt,
 } from "@stockcheck/core";
+import { executeTransferFlow } from "./runner/ui-flow.js";
+import { buildPartialEvidence, buildFullEvidence } from "./runner/evidence.js";
 
 // ──────────────────────────────────────────────────────────
 // Fixture types
@@ -119,9 +117,6 @@ export interface ScenarioOptions {
 /**
  * Run a complete scenario: navigate → input → review → confirm → check.
  * Returns the full verdict and evidence bundle.
- *
- * This is the heart of StockCheck — it ensures the checker observes the
- * application's actual transaction, not a fabricated one.
  */
 export async function runScenario(
   page: import("@playwright/test").Page,
@@ -154,40 +149,30 @@ export async function runScenario(
     return runtimeReadAccountSnapshot(addr, mintAddress);
   };
 
-  // Snapshot before
+  // 1. Capture on-chain balances before transfer
   const sourceBefore = await getSnapshot(sender);
   const destinationBefore = await getSnapshot(recipientAddress);
-  const clockAtEvaluation = await getClockTimestampSeconds();
 
-  // Inject mint state for the test scenario
-  const mintPayload = {
-    currentMultiplier: mintState.currentMultiplier,
-    newMultiplier: mintState.newMultiplier,
-    newMultiplierEffectiveTimestamp: mintState.newMultiplierEffectiveTimestamp.toString(),
+  // 2. Drive the UI transfer interaction via adapter
+  const { capturedReview, signature } = await executeTransferFlow(page, adapter, {
+    mintAddress,
+    mintState,
+    recipientAddress,
+    amountToEnter,
+    isMax,
+  });
+
+  const commonEvidenceOpts = {
+    scenarioId,
+    scenarioDescription,
+    adapter,
+    fixtureIdentity,
+    runtimeIdentity,
+    capturedReview,
+    mintState,
   };
-  await page.addInitScript((state) => {
-    (globalThis as unknown as { __STOCKCHECK_MINT_STATE__?: unknown }).__STOCKCHECK_MINT_STATE__ = state;
-  }, mintPayload);
 
-  // Operate the UI
-  await adapter.openTransferScreen(page);
-  await page.evaluate((state) => {
-    (globalThis as unknown as { __STOCKCHECK_MINT_STATE__?: unknown }).__STOCKCHECK_MINT_STATE__ = state;
-  }, mintPayload).catch(() => {});
-  await adapter.connectWallet(page);
-  await adapter.selectToken(page, mintAddress);
-  await adapter.enterRecipient(page, recipientAddress);
-
-  if (isMax) {
-    await adapter.clickMax(page);
-  } else {
-    await adapter.enterAmount(page, amountToEnter);
-  }
-
-  await adapter.clickReview(page);
-  const capturedReview = await adapter.captureReview(page);
-  const signature = await adapter.clickConfirmAndWaitForReceipt(page);
-
+  // 3. If receipt missing, return unverified NOT_TESTED verdict
   if (signature === null) {
     return {
       verdict: {
@@ -196,60 +181,28 @@ export async function runScenario(
           "Transaction receipt not found — Surfpool may be unreachable or operation unsupported",
       },
       evidence: buildPartialEvidence(
-        scenarioId,
-        scenarioDescription,
-        capturedReview,
-        mintState,
-        sourceBefore,
+        commonEvidenceOpts,
         sourceBefore,
         destinationBefore,
-        destinationBefore,
-        expectedRawAmount,
-        adapter,
-        fixtureIdentity,
-        runtimeIdentity
+        expectedRawAmount
       ),
     };
   }
 
-  // Snapshot after
+  // 4. Capture on-chain balances after confirmed transaction
   const sourceAfter = await getSnapshot(sender);
   const destinationAfter = await getSnapshot(recipientAddress);
 
-  const observedSenderDebit =
-    sourceBefore.rawBalance - sourceAfter.rawBalance;
-  const observedRecipientCredit =
-    destinationAfter.rawBalance - destinationBefore.rawBalance;
-
-  // Compute scaled equivalent from actual movement
-  const effectiveMultiplier = mintState.currentMultiplier;
-  const observedScaledEquivalent =
-    (Number(observedSenderDebit) / Math.pow(10, mintState.decimals)) *
-    effectiveMultiplier;
-
-  const evidence: TestEvidence = {
-    scenarioId,
-    scenarioDescription,
-    adapterVersion: `${adapter.name}@${adapter.version}`,
-    fixtureIdentity,
-    runtimeIdentity,
-    evaluatedAt: new Date().toISOString(),
-    capturedReview,
-    mintStateAtEvaluation: {
-      ...mintState,
-      newMultiplierEffectiveTimestamp: mintState.newMultiplierEffectiveTimestamp,
-    },
+  // 5. Assemble evidence and evaluate mathematical verdict
+  const evidence = buildFullEvidence(
+    commonEvidenceOpts,
     sourceBefore,
     sourceAfter,
     destinationBefore,
     destinationAfter,
-    transactionSignature: signature,
-    transactionMessage: "",
-    expectedRawAmount,
-    observedSenderDebit,
-    observedRecipientCredit,
-    observedScaledEquivalent,
-  };
+    signature,
+    expectedRawAmount
+  );
 
   const verdict = isMax
     ? checkMaxTransfer(evidence)
@@ -258,45 +211,7 @@ export async function runScenario(
   return { verdict, evidence };
 }
 
-// ──────────────────────────────────────────────────────────
-// Internal helpers
-// ──────────────────────────────────────────────────────────
-
-function buildPartialEvidence(
-  scenarioId: string,
-  scenarioDescription: string,
-  capturedReview: TestEvidence["capturedReview"],
-  mintState: MintState,
-  sourceBefore: AccountSnapshot,
-  sourceAfter: AccountSnapshot,
-  destinationBefore: AccountSnapshot,
-  destinationAfter: AccountSnapshot,
-  expectedRawAmount: bigint,
-  adapter: AppAdapter,
-  fixtureIdentity: string,
-  runtimeIdentity: string
-): TestEvidence {
-  return {
-    scenarioId,
-    scenarioDescription,
-    adapterVersion: `${adapter.name}@${adapter.version}`,
-    fixtureIdentity,
-    runtimeIdentity,
-    evaluatedAt: new Date().toISOString(),
-    capturedReview,
-    mintStateAtEvaluation: mintState,
-    sourceBefore,
-    sourceAfter,
-    destinationBefore,
-    destinationAfter,
-    transactionSignature: "NOT_AVAILABLE",
-    transactionMessage: "",
-    expectedRawAmount,
-    observedSenderDebit: 0n,
-    observedRecipientCredit: 0n,
-    observedScaledEquivalent: 0,
-  };
-}
-
 export { expect };
 export type { AppAdapter };
+export * from "./runner/ui-flow.js";
+export * from "./runner/evidence.js";
